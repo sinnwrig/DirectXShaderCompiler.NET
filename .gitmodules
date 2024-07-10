@@ -1,0 +1,3 @@
+[submodule "Native/source"]
+	path = Native/mach-dxcompiler
+	url = https://github.com/sinnwrig/mach-dxcompiler

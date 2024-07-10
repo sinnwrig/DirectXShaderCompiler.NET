@@ -1,0 +1,52 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <OutputType>Exe</OutputType>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <PackageId>DirectXShaderCompiler.NET</PackageId>
+        <Version>0.1.0</Version>
+        <Authors>Kai Angulo</Authors>
+        <Owners>Kai Angulo</Owners>
+        <Description>A .NET Wrapper for the DirectX Shader Compiler</Description>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Content Include="../DXC/lib/windows-x86_64/bin/*.dll">
+            <Pack>true</Pack>
+            <PackagePath>runtimes/win-x64/native</PackagePath>
+        </Content>
+    
+        <Content Include="../DXC/lib/windows-arm64/bin/*.dll">
+            <Pack>true</Pack>
+            <PackagePath>runtimes/win-arm64/native</PackagePath>
+        </Content>
+    
+        <Content Include="../DXC/lib/linux-x86_64/lib/*.so">
+            <Pack>true</Pack>
+            <PackagePath>runtimes/linux-x64/native</PackagePath>
+        </Content>
+    
+        <Content Include="../DXC/lib/linux-arm64/lib/*.so">
+            <Pack>true</Pack>
+            <PackagePath>runtimes/linux-arm64/native</PackagePath>
+        </Content>
+  
+        <Content Include="../DXC/lib/macos-x86_64/lib/*.dylib">
+            <Pack>true</Pack>
+            <PackagePath>runtimes/osx-x64/native</PackagePath>
+        </Content>
+  
+        <Content Include="../DXC/lib/macos-arm64/lib/*.dylib">
+            <Pack>true</Pack>
+            <PackagePath>runtimes/osx-arm64/native</PackagePath>
+        </Content>
+    </ItemGroup>
+
+</Project>
