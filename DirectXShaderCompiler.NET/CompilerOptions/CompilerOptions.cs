@@ -42,42 +42,6 @@ public partial class CompilerOptions
     [CompilerOption(name:"-disable-payload-qualifiers")]
     public bool disablePayloadQualifiers = false; 
     
-    private Dictionary<string, string> macros = new();
-
-    /// <summary> Define a macro </summary>
-    public void SetMacro(string name, string value) => macros[name] = value; 
-
-    /// <summary> Remove a macro </summary>
-    public void RemoveMacro(string name) => macros.Remove(name); 
-
-    private void AddMacros(List<string> args)
-    {
-        foreach (var macro in macros)
-        {
-            args.Add("-D");
-            args.Add($"{macro.Key}={macro.Value}");
-        }
-    }
-
-
-    private HashSet<string> includePaths = new();
-
-    /// <summary> Define an include path </summary>
-    public void SetIncludePath(string path) => includePaths.Add(path); 
-
-    /// <summary> Remove an include path </summary>
-    public void RemoveIncludePath(string path) => includePaths.Remove(path); 
-
-    private void AddIncludePaths(List<string> args)
-    {
-        foreach (var path in includePaths)
-        {
-            args.Add("-I");
-            args.Add(path);
-        }
-    }
-
-    
     /// <summary> Enable 16bit types and disable min precision types. Available in HLSL 2018 and shader model 6.2 </summary>
     [CompilerOption(name:"-enable-16bit-types")]
     public bool enable16BitTypes = false;
@@ -111,6 +75,10 @@ public partial class CompilerOptions
     /// <summary> Output assembly code listing file </summary>
     [CompilerOption(name:"-Fc")]
     public string? assemblyListingFile = null; 
+
+    /// <summary> Select diagnostic message format. Supported values: clang, msvc, mdvc-fallback, vi </summary>
+    [CompilerOption(name:"-fdiagnostics-format", assignment:AssignmentType.Equals)]
+    public string? diagnosticsFormat = null; 
     
     /// <summary> Print option name with mappable diagnostics </summary>
     [CompilerOption(name:"-fdiagnostics-show-option")]
@@ -175,6 +143,10 @@ public partial class CompilerOptions
     /// <summary> Print time report </summary>
     [CompilerOption(name:"-ftime-report")]
     public bool timeReport = false;
+
+    /// <summary> Minimum time granularity (in microseconds) traced by time profiler </summary>
+    [CompilerOption(name:"-ftime-trace-granularity", Assignment = AssignmentType.Equals)]
+    public int? timeTraceGranularity = null; 
     
     /// <summary> Print hierarchial time to file- stdout if no file is specified </summary>
     [CompilerOption(name:"-ftime-trace", Assignment = AssignmentType.Equals)]
@@ -215,10 +187,6 @@ public partial class CompilerOptions
     /// <summary> Output instruction numbers in assembly listings </summary>
     [CompilerOption(name:"-Ni")]
     public bool outputInstructionNumbers = false; 
-
-    /// <summary> Do not use legacy cbuffer load </summary>
-    [CompilerOption(name:"-no-legacy-cbuf-layout")]
-    public bool noLegacyCbufferLoad = false; 
 
     /// <summary> Suppress warnings </summary>
     [CompilerOption(name:"-no-warnings")]
@@ -309,197 +277,24 @@ public partial class CompilerOptions
     [CompilerOption(name:"-O3", value:(int)OptimizationLevel.O3)]
     public OptimizationLevel? optimization = OptimizationLevel.O3; 
 
-    /// <summary> Collect all global constants outside cbuffer declarations into cbuffer GlobalCB { ... }. Still experimental, not all dependency scenarios handled. </summary>
-    [CompilerOption(name:"-decl-global-cb")]
-    public bool createGlobalCBuffer = false; 
 
-    /// <summary> Move uniform parameters from entry point to global scope </summary>
-    [CompilerOption(name:"-extract-entry-uniforms")]
-    public bool extractEntryUniforms = false; 
-    
-    /// <summary> Set extern on non-static globals </summary>
-    [CompilerOption(name:"-global-extern-by-default")]
-    public bool globalExternByDefault = false; 
+    private Dictionary<string, string> macros = new();
 
-    /// <summary> Write out user defines after rewritten HLSL </summary>
-    [CompilerOption(name:"-keep-user-macro")]
-    public bool keepUserMacro = false; 
+    /// <summary> Define a macro </summary>
+    public void SetMacro(string name, string value) => macros[name] = value; 
 
-    /// <summary> Add line directive </summary>
-    [CompilerOption(name:"-line-directive")]
-    public bool addLineDirective = false; 
+    /// <summary> Remove a macro </summary>
+    public void RemoveMacro(string name) => macros.Remove(name); 
 
-    /// <summary> Remove unused functions and types </summary>
-    [CompilerOption(name:"-remove-unused-functions")]
-    public bool removeUnusedFunctions = false; 
+    private void AddMacros(List<string> args)
+    {
+        foreach (var macro in macros)
+        {
+            args.Add("-D");
+            args.Add($"{macro.Key}={macro.Value}");
+        }
+    }
 
-    /// <summary> Remove unused static globals and functions </summary>
-    [CompilerOption(name:"-remove-unused-globals")]
-    public bool removeUnusedGlobals = false;
-    
-    /// <summary> Translate function definitions to declarations </summary>
-    [CompilerOption(name:"-skip-fn-body")]
-    public bool skipFunctionBody = false; 
-
-    /// <summary> Remove static functions and globals when used with -skip-fn-body </summary>
-    [CompilerOption(name:"-skip-static")]
-    public bool skipStatic = false;
-    
-    /// <summary> Rewrite HLSL, without changes. </summary>
-    [CompilerOption(name:"-unchanged")]
-    public bool rewriteUnchanged = false; 
-
-    /// <summary> Specify whitelist of debug info category (file -> source -> line, tool, vulkan-with-source) </summary>
-    [CompilerOption(name:"-fspv-debug", Assignment = AssignmentType.Equals)]
-    public string? debugWhitelist = null; 
-    
-    /// <summary> Specify the SPIR-V entry point name. Defaults to the HLSL entry point name. </summary>
-    [CompilerOption(name:"-fspv-entrypoint-name", Assignment = AssignmentType.Equals)]
-    public string? entrypointName = null; 
-    
-    /// <summary> Specify SPIR-V extension permitted to use </summary>
-    [CompilerOption(name:"-fspv-extension", Assignment = AssignmentType.Equals)]
-    public string? extension = null; 
-
-    /// <summary> Flatten arrays of resources so each array element takes one binding number </summary>
-    [CompilerOption(name:"-fspv-flatten-resource-arrays")]               
-    public bool flattenResourceArrays = false; 
-
-    /// <summary> Preserves all bindings declared within the module, even when those bindings are unused </summary>
-    [CompilerOption(name:"-fspv-preserve-bindings")]                     
-    public bool preserveBindings = false; 
-
-    /// <summary> Preserves all interface variables in the entry point, even when those variables are unused </summary>
-    [CompilerOption(name:"-fspv-preserve-interface")]                    
-    public bool preserveInterface = false; 
-
-    /// <summary> Print the SPIR-V module before each pass and after the last one. Useful for debugging SPIR-V legalization and optimization passes. </summary>
-    [CompilerOption(name:"-fspv-print-all")]                             
-    public bool printAll = false; 
-
-    /// <summary> Replaces loads of composite objects to reduce memory pressure for the loads </summary>
-    [CompilerOption(name:"-fspv-reduce-load-size")]                      
-    public bool reduceLoadSize = false; 
-
-    /// <summary> Emit additional SPIR-V instructions to aid reflection </summary>
-    [CompilerOption(name:"-fspv-reflect")]                               
-    public bool addReflectionAid = false; 
-
-    /// <summary> Specify the target environment: vulkan1.0 (default), vulkan1.1, vulkan1.1spirv1.4, vulkan1.2, vulkan1.3, or universal1.5 </summary>
-    [CompilerOption(name:"-fspv-target-env", Assignment = AssignmentType.Equals)]
-    public string? targetEnvironment = null; 
-    
-    /// <summary> Assume the legacy matrix order (row major) when accessing raw buffers (e.g., ByteAdddressBuffer) </summary>
-    [CompilerOption(name:"-fspv-use-legacy-buffer-matrix-order")]        
-    public bool useLegacyBufferMatrixOrder = false; 
-
-    /// <summary> Apply fvk-*-shift to resources without an explicit register assignment. </summary>
-    [CompilerOption(name:"-fvk-auto-shift-bindings")]                    
-    public bool autoShiftBindings = false; 
-
-    /// <summary> Specify Vulkan binding number shift for b-type register: <shift> <space>  </summary>
-    [CompilerOption(name:"-fvk-b-shift")]                                
-    public string? bindingNumberShift = null; 
-
-    /// <summary> Specify Vulkan binding number and set number for the $Globals cbuffer: <binding> <set> </summary>
-    [CompilerOption(name:"-fvk-bind-globals")]                           
-    public string? globalBindingNumber = null; 
-
-    /// <summary> Specify Vulkan descriptor set and binding for a specific register: <type-number> <space> <binding> <set> </summary>
-    [CompilerOption(name:"-fvk-bind-register")]                          
-    public string? registerBindings = null; 
-
-    /// <summary> Negate SV_Position.y before writing to stage output in VS/DS/GS to accommodate Vulkan's coordinate system </summary>
-    [CompilerOption(name:"-fvk-invert-y")]                               
-    public bool invertY = false; 
-
-    /// <summary> Specify Vulkan binding number shift for s-type register: <shift> <space>  </summary>
-    [CompilerOption(name:"-fvk-s-shift")]                                
-    public string? SRegisterBindingShift = null; 
-
-    /// <summary> Follow Vulkan spec to use gl_BaseInstance as the first vertex instance, which makes SV_InstanceID = gl_InstanceIndex - gl_BaseInstance (without this option, SV_InstanceID = gl_InstanceIndex) </summary>
-    [CompilerOption(name:"-fvk-support-nonzero-base-instance")]          
-    public bool nonzeroBaseInstance = false; 
-    
-    /// <summary> Specify Vulkan binding number shift for t-type register: <shift> <space>  </summary>
-    [CompilerOption(name:"-fvk-t-shift")]                                
-    public string? TRegisterBindingShift = null; 
-
-    /// <summary> Specify Vulkan binding number shift for u-type register: <shift> <space>  </summary>
-    [CompilerOption(name:"-fvk-u-shift")]                                
-    public string? URegisterBindingShift = null; 
-
-    /// <summary> Use DirectX memory layout for Vulkan resources </summary>
-    [CompilerOption(name:"-fvk-use-dx-layout")]                          
-    public bool useDirectXMemoryLayout = false; 
-
-    /// <summary> Reciprocate SV_Position.w after reading from stage input in PS to accommodate the difference between Vulkan and DirectX </summary>
-    [CompilerOption(name:"-fvk-use-dx-position-w")]                      
-    public bool useDirectXPositionW = false; 
-
-    /// <summary> Use strict OpenGL std140/std430 memory layout for Vulkan resources </summary>
-    [CompilerOption(name:"-fvk-use-gl-layout")]                          
-    public bool useOpenGLMemoryLayout = false; 
-
-    /// <summary> Use scalar memory layout for Vulkan resources </summary>
-    [CompilerOption(name:"-fvk-use-scalar-layout")]                      
-    public bool useScalarMemoryLayout = false; 
-
-    /// <summary> Specify a comma-separated list of SPIRV-Tools passes to customize optimization configuration (see https://khr.io/hlsl2spirv#optimization) </summary>
-    [CompilerOption(name:"-Oconfig", Assignment = AssignmentType.Equals)]
-    public string? spirVOptimizationConfig = null; 
-
-    /// <summary> Generate SPIR-V code </summary>
-    [CompilerOption(name:"-spirv")]                                      
-    public bool generateAsSpirV = false; 
-
-    /// <summary> Load a binary file rather than compiling </summary>
-    [CompilerOption(name:"-dumpbin")]
-    public bool dumpBin = false; 
-
-    /// <summary> Extract root signature from shader bytecode (must be used with /Fo <file>) </summary>
-    [CompilerOption(name:"-extractrootsignature")]                       
-    public bool extractRootSignature = false; 
-    
-    /// <summary>  Save private data from shader blob </summary>
-    [CompilerOption(name:"-getprivate")] 
-    public string? privateDataFile = null; 
-    
-    /// <summary> Preprocess to file </summary>
-    [CompilerOption(name:"-P")]                                          
-    public bool outputPreprocessedCode = false; 
-
-    /// <summary> Embed PDB in shader container (must be used with /Zi) </summary>
-    [CompilerOption(name:"-Qembed_debug")]                               
-    public bool embedDebugPDB = false; 
-    
-    /// <summary> Strip debug information from 4_0+ shader bytecode  (must be used with /Fo <file>) </summary>
-    [CompilerOption(name:"-Qstrip_debug")]                               
-    public bool stripDebugPDB = false; 
-    
-    /// <summary> Strip private data from shader bytecode  (must be used with /Fo <file>) </summary>
-    [CompilerOption(name:"-Qstrip_priv")]                                
-    public bool stripPrivate = false; 
-    
-    /// <summary> Strip reflection data from shader bytecode  (must be used with /Fo <file>) </summary>
-    [CompilerOption(name:"-Qstrip_reflect")]                             
-    public bool stripReflection = false; 
-    
-    /// <summary> Strip root signature data from shader bytecode  (must be used with /Fo <file>) </summary>
-    [CompilerOption(name:"-Qstrip_rootsignature")]                       
-    public bool stripRootSignature = false; 
-    
-    /// <summary> Private data to add to compiled shader blob </summary>
-    [CompilerOption(name:"-setprivate")]                    
-    public string? additionalPrivateData = null; 
-    
-    /// <summary> Attach root signature to shader bytecode </summary>
-    [CompilerOption(name:"-setrootsignature")]                   
-    public string? attachedRootSignature = null; 
-    
-    /// <summary> Verify shader bytecode with root signature </summary>
-    [CompilerOption(name:"-verifyrootsignature")]                 
-    public string? verifyRootSignature = null; 
 
     private Dictionary<string, bool> warnings = new();
     

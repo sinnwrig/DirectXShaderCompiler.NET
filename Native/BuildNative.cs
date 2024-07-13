@@ -52,18 +52,27 @@ static class Build
 
     static List<PlatformAlias> platformAliases = new()
     {
-        new(OSPlatform.Windows, "Windows", "windows", ".exe"),
-        new(OSPlatform.Linux, "Linux", "linux", ""),
-        new(OSPlatform.OSX, "MacOS", "macos-none", ""),
+        new(OSPlatform.Windows, "windows", "windows-gnu", ".exe"),
+        new(OSPlatform.Linux, "linux", "linux-gnu", ""),
+        new(OSPlatform.OSX, "macos", "macos-none", ""),
     };
 
     static List<ArchAlias> architectureAliases = new()
     {
-        new(Architecture.X64, "X64", "x86_64"),
-        new(Architecture.Arm64, "ARM", "aarch64"),
+        new(Architecture.X64, "x64", "x86_64"),
+        new(Architecture.Arm64, "arm64", "aarch64"),
     };
 
-    static void Compile(string srcPath, string outputPath, bool isShared, ArchAlias architecture, PlatformAlias platform, string cpuSpecific = null, bool clearCache = false, bool debugSymbols = false)
+    static void Compile(
+        string srcPath, 
+        string outputPath, 
+        bool isShared, 
+        ArchAlias architecture, 
+        PlatformAlias platform, 
+        string cpuSpecific = null, 
+        bool clearCache = false, 
+        bool debugSymbols = false, 
+        int? threadLimit = null)
     {
         string zigCacheDir = Path.Combine(srcPath, ".zig-cache");
 
@@ -78,13 +87,16 @@ static class Build
 
         Console.WriteLine($"Compiling for {architecture.zigAlias}-{platform.zigAlias}. Shared Library: {isShared}. Output directory: {outputPath}");
 
-        string zigArgs = $"build -p {outputPath} -Dshared -Dspirv -Doptimize=ReleaseFast -Dfrom_source -Dskip_executables -Dtarget={architecture.zigAlias}-{platform.zigAlias}";
+        string zigArgs = $"build -p \"{outputPath}\" -Dskip_executables -Dskip_tests -Dshared -Dspirv -Doptimize=ReleaseFast -Dtarget={architecture.zigAlias}-{platform.zigAlias}";
 
         if (debugSymbols)
-            zigArgs += "-Ddebug";
+            zigArgs += " -Ddebug";
 
         if (cpuSpecific != null)
-            zigArgs += $"-Dcpu={cpuSpecific}";
+            zigArgs += $" -Dcpu={cpuSpecific}";
+
+        if (threadLimit != null)
+            zigArgs += $" -j{threadLimit}";
 
         var process = new Process
         {
@@ -163,16 +175,19 @@ static class Build
             List<PlatformAlias> platforms = [ platformAliases.Find(x => x.platform == GetPlatform()) ];
             List<ArchAlias> architectures = [ architectureAliases.Find(x => x.architecture == RuntimeInformation.OSArchitecture )];
 
-            if (options.Platform?.Count() != 0)
+            var platformStr = options.Platform?.Select(x => x.ToLower()).ToArray();
+            var architectureStr = options.Architecture?.Select(x => x.ToLower()).ToArray();
+
+            if (platformStr?.Length != 0)
             {
-                if (options.Platform?.Count() == 1 && options.Platform?.First() == "All")
+                if (platformStr.Length == 1 && platformStr[0] == "all")
                 {
                     platforms = platformAliases;
                 }
                 else
                 {
                     platforms = options.Platform?.Select(x => {
-                        var value = platformAliases.Find(y => y.commandLineName == x);
+                        var value = platformAliases.Find(y => y.commandLineName.Equals(x, StringComparison.OrdinalIgnoreCase));
 
                         if (value.Equals(default(PlatformAlias)))
                             throw new Exception($"Invalid platform: {x}");
@@ -182,16 +197,16 @@ static class Build
                 }
             }
 
-            if (options.Architecture?.Count() != 0)
+            if (architectureStr?.Length != 0)
             {
-                if (options.Architecture?.Count() == 1 && options.Architecture?.First() == "All")
+                if (architectureStr.Length == 1 && architectureStr[0] == "all")
                 {
                     architectures = architectureAliases;
                 }
                 else
                 {
                     architectures = options.Architecture?.Select(x => {
-                        var value = architectureAliases.Find(y => y.commandLineName == x);
+                        var value = architectureAliases.Find(y => y.commandLineName.Equals(x, StringComparison.OrdinalIgnoreCase));
 
                         if (value.Equals(default(ArchAlias)))
                             throw new Exception($"Invalid platform: {x}");
@@ -212,6 +227,11 @@ static class Build
                 }
             }
 
+            int? jobs = null;
+
+            if (int.TryParse(options.Jobs, out int jobsParsed))
+                jobs = jobsParsed;
+
             foreach (var pAlias in platforms)
             {
                 foreach (var aAlias in architectures)
@@ -219,9 +239,9 @@ static class Build
                     string pname = pAlias.zigAlias;
                     string aname = aAlias.zigAlias;
 
-                    string outputPath = Path.Combine(cwd, "lib", $"{pAlias.zigAlias}-{aAlias.zigAlias}");
+                    string outputPath = Path.Combine(cwd, "lib", $"{pAlias.commandLineName}-{aAlias.commandLineName}");
 
-                    Compile(Path.Combine(cwd, "mach-dxcompiler"), outputPath, true, aAlias, pAlias);
+                    Compile(Path.Combine(cwd, "DirectXShaderCompiler-zig"), outputPath, true, aAlias, pAlias, threadLimit:jobs);
                 }
             }
         });
@@ -238,5 +258,8 @@ static class Build
 
         [Option('D', "debug", Required = false, HelpText = "Enable debug symbols.")]
         public string Debug { get; set; }
+
+        [Option('J', "jobs", Required = false, HelpText = "Max amount of jobs zig build is allowed to run.")]
+        public string Jobs { get; set; }
     }
 }

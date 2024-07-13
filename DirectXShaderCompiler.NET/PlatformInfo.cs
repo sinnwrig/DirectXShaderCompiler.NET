@@ -31,4 +31,9 @@ internal struct PlatformInfo
     {
         return new PlatformInfo(GetPlatform(), RuntimeInformation.ProcessArchitecture);
     }
+
+    public override readonly string ToString()
+    {
+        return $"({platform}, {architecture})";
+    }
 }

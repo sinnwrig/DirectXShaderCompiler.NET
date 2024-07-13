@@ -9,11 +9,11 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <RestoreSources>$(RestoreSources);../DXCompiler.NET/bin/Debug;https://api.nuget.org/v3/index.json</RestoreSources>
+        <RestoreSources>$(RestoreSources);../DirectXShaderCompiler.NET/bin/Release;https://api.nuget.org/v3/index.json</RestoreSources>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="DXCompiler.NET" Version="0.1.0" />
+        <PackageReference Include="DirectXShaderCompiler.NET" Version="0.1.0" />
     </ItemGroup>
 
 </Project>

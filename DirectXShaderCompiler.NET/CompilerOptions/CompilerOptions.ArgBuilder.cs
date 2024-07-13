@@ -45,7 +45,7 @@ public partial class CompilerOptions
     }
     
 
-    private void SetBoolOption(List<string> args, CompilerOptionAttribute[] options, bool value)
+    private static void SetBoolOption(List<string> args, CompilerOptionAttribute[] options, bool value)
     {
         // Enable/Disable compiler option based on boolean 
         if (options.Length < 2)
@@ -64,7 +64,7 @@ public partial class CompilerOptions
     }   
 
 
-    private void SetStringOption(List<string> args, CompilerOptionAttribute option, string? str)
+    private static void SetStringOption(List<string> args, CompilerOptionAttribute option, string? str)
     {
         // String is empty but argument isn't null- add option only
         if (string.IsNullOrWhiteSpace(str))
@@ -84,7 +84,7 @@ public partial class CompilerOptions
     }
 
 
-    private void SetEnumOption(List<string> args, CompilerOptionAttribute[] options, Enum enumValue)
+    private static void SetEnumOption(List<string> args, CompilerOptionAttribute[] options, Enum enumValue)
     {
         // Only one option- pass enum as string value
         if (options.Length == 1)
@@ -132,7 +132,6 @@ public partial class CompilerOptions
         }
 
         AddMacros(args);
-        AddIncludePaths(args);
         AddWarnings(args);
 
         return args.ToArray();

@@ -9,8 +9,12 @@
       <PackageReference Include="CommandLineParser" Version="2.9.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Compile Include="BuildNative.cs" />
+    </ItemGroup>
+
     <PropertyGroup>
-      <DefaultItemExcludes>$(DefaultItemExcludes);mach-dxcompiler\**\*.*</DefaultItemExcludes>
+      <DefaultItemExcludes>$(DefaultItemExcludes);**\*.*</DefaultItemExcludes>
     </PropertyGroup>
 
 

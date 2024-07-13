@@ -1,4 +1,4 @@
-﻿﻿using DXCompiler.NET;
+﻿﻿using DirectXShaderCompiler.NET;
 
 namespace Application;
 
@@ -22,9 +22,9 @@ public class Program
 
         Console.WriteLine(string.Join(' ', options.GetArgumentsArray()));
 
-        using DXShaderCompiler compInstance = new DXShaderCompiler();
+        using ShaderCompiler compInstance = new ShaderCompiler();
 
-        CompilationResult result = compInstance.Compile(ShaderCode.HlslCode, args, IncludeFile);
+        CompilationResult result = compInstance.Compile(ShaderCode.HlslCode, options, IncludeFile);
 
         if (result.compilationErrors != null)
         {
