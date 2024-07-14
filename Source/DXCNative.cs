@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace DirectXShaderCompiler.NET;
 
+
 [StructLayout(LayoutKind.Sequential)]
 internal struct NativeDxcCompiler { }
 
@@ -19,29 +20,27 @@ internal struct NativeDxcCompileObject { }
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeDxcIncludeResult
 {
-    internal IntPtr header_data;
+    internal byte* header_data;
     internal nuint header_length;
 }
 
+internal unsafe delegate NativeDxcIncludeResult* NativeDxcIncludeFunction(IntPtr context, byte* headerNameUtf8); 
+internal unsafe delegate int NativeDxcFreeIncludeFunction(IntPtr context, NativeDxcIncludeResult* includeResult);
+
+
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeDxcIncludeCallbacks {
-    internal IntPtr include_ctx;
-    internal IntPtr include_func;
-    internal IntPtr free_func;
+    internal void* include_ctx;
+    internal void* include_func;
+    internal void* free_func;
 }
-
-
-internal unsafe delegate IntPtr NativeDxcIncludeFunction(IntPtr context, byte* headerNameUtf8); 
-
-internal unsafe delegate int NativeDxcFreeIncludeFunction(IntPtr context, IntPtr includeResult);
-
 
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeDxcCompileOptions {
     // Required
-    internal IntPtr code; // utf-8 string pointer
+    internal byte* code; // utf-8 string pointer
     internal nuint code_len;
-    internal IntPtr* args; // Array of utf-8 string pointers
+    internal byte** args; // Array of utf-8 string pointers
     internal nuint args_len;
 
     // Optional
@@ -51,7 +50,7 @@ internal unsafe struct NativeDxcCompileOptions {
 
 internal static class DXCNative
 {
-    const string LibName = "dxcompiler-shared";
+    const string LibName = "dxcompiler";
 
     const string WinLib = LibName + ".dll";
     const string OSXLib = "lib" + LibName + ".dylib";
@@ -144,42 +143,43 @@ internal static class DXCNative
 
     const CallingConvention cconv = CallingConvention.Cdecl;
 
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern NativeDxcCompiler* dxc_initialize();
 
     [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern void dxc_finalize(NativeDxcCompiler* compilerPtr);
+    unsafe internal static extern NativeDxcCompiler* DxcInitialize();
 
     [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern NativeDxcCompileResult* dxc_compile(NativeDxcCompiler* compilerPtr, NativeDxcCompileOptions* compileOptions);
-
-
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern NativeDxcCompileError* dxc_compile_result_get_error(NativeDxcCompileResult* resultPtr);
+    unsafe internal static extern void DxcFinalize(NativeDxcCompiler* compilerPtr);
 
     [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern NativeDxcCompileObject* dxc_compile_result_get_object(NativeDxcCompileResult* resultPtr);
-
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern void dxc_compile_result_deinit(NativeDxcCompileResult* resultPtr);
+    unsafe internal static extern NativeDxcCompileResult* DxcCompile(NativeDxcCompiler* compilerPtr, NativeDxcCompileOptions* compileOptions);
 
 
     [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern byte* dxc_compile_object_get_bytes(NativeDxcCompileObject* objectPtr);
+    unsafe internal static extern NativeDxcCompileError* DxcCompileResultGetError(NativeDxcCompileResult* resultPtr);
 
     [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern nuint dxc_compile_object_get_bytes_length(NativeDxcCompileObject* objectPtr);
+    unsafe internal static extern NativeDxcCompileObject* DxcCompileResultGetObject(NativeDxcCompileResult* resultPtr);
 
     [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern void dxc_compile_object_deinit(NativeDxcCompileObject* objectPtr);
+    unsafe internal static extern void DxcCompileResultRelease(NativeDxcCompileResult* resultPtr);
 
 
     [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern byte* dxc_compile_error_get_string(NativeDxcCompileError* errorPtr);
+    unsafe internal static extern byte* DxcCompileObjectGetBytes(NativeDxcCompileObject* objectPtr);
 
     [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern nuint dxc_compile_error_get_string_length(NativeDxcCompileError* errorPtr);
+    unsafe internal static extern nuint DxcCompileObjectGetBytesLength(NativeDxcCompileObject* objectPtr);
 
     [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern void dxc_compile_error_deinit(NativeDxcCompileError* errorPtr);
+    unsafe internal static extern void DxcCompileObjectDeinit(NativeDxcCompileObject* objectPtr);
+
+
+    [DllImport(LibName, CallingConvention = cconv)]
+    unsafe internal static extern byte* DxcCompileErrorGetString(NativeDxcCompileError* errorPtr);
+
+    [DllImport(LibName, CallingConvention = cconv)]
+    unsafe internal static extern nuint DxcCompileErrorGetStringLength(NativeDxcCompileError* errorPtr);
+
+    [DllImport(LibName, CallingConvention = cconv)]
+    unsafe internal static extern void DxcCompileErrorDeinit(NativeDxcCompileError* errorPtr);
 }
