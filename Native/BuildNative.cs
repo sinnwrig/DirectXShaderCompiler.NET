@@ -65,15 +65,14 @@ static class Build
 
     static void Compile(
         string srcPath, 
-        string outputPath,  
+        string outputPath, 
+        bool isShared, 
         ArchAlias architecture, 
         PlatformAlias platform, 
-        bool isShared = true,
-        bool skipExecutable = true,
-        bool skipTests = true,
+        string cpuSpecific = null, 
         bool clearCache = false, 
         bool debugSymbols = false, 
-        string cpuSpecific = null)
+        int? threadLimit = null)
     {
         string zigCacheDir = Path.Combine(srcPath, ".zig-cache");
 
@@ -88,7 +87,7 @@ static class Build
 
         Console.WriteLine($"Compiling for {architecture.zigAlias}-{platform.zigAlias}. Shared Library: {isShared}. Output directory: {outputPath}");
 
-        string zigArgs = $"build -p \"{outputPath}\" -Dshared -Dspirv -Doptimize=ReleaseFast -Dtarget={architecture.zigAlias}-{platform.zigAlias}";
+        string zigArgs = $"build -p \"{outputPath}\" -Dskip_executables -Dskip_tests -Dshared -Dspirv -Doptimize=ReleaseFast -Dtarget={architecture.zigAlias}-{platform.zigAlias}";
 
         if (debugSymbols)
             zigArgs += " -Ddebug";
@@ -96,11 +95,8 @@ static class Build
         if (cpuSpecific != null)
             zigArgs += $" -Dcpu={cpuSpecific}";
 
-        if (skipExecutable)
-            zigArgs += " -Dskip_executables";
-        
-        if (skipTests)
-            zigArgs += " -Dskip_tests";
+        if (threadLimit != null)
+            zigArgs += $" -j{threadLimit}";
 
         var process = new Process
         {
@@ -108,7 +104,11 @@ static class Build
             {
                 FileName = "zig",
                 Arguments = zigArgs,
+                RedirectStandardOutput = false,
+                RedirectStandardError = false,
                 WorkingDirectory = srcPath,
+                UseShellExecute = false,
+                CreateNoWindow = false
             }
         };
 
@@ -129,6 +129,9 @@ static class Build
                 {
                     FileName = "zig",
                     Arguments = "version",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
                     CreateNoWindow = true
                 }
             };
@@ -224,6 +227,11 @@ static class Build
                 }
             }
 
+            int? jobs = null;
+
+            if (int.TryParse(options.Jobs, out int jobsParsed))
+                jobs = jobsParsed;
+
             foreach (var pAlias in platforms)
             {
                 foreach (var aAlias in architectures)
@@ -233,7 +241,7 @@ static class Build
 
                     string outputPath = Path.Combine(cwd, "lib", $"{pAlias.commandLineName}-{aAlias.commandLineName}");
 
-                    Compile(Path.Combine(cwd, "DirectXShaderCompiler-zig"), outputPath, aAlias, pAlias, isShared:true);
+                    Compile(Path.Combine(cwd, "DirectXShaderCompiler-zig"), outputPath, true, aAlias, pAlias, threadLimit:jobs);
                 }
             }
         });
@@ -250,5 +258,8 @@ static class Build
 
         [Option('D', "debug", Required = false, HelpText = "Enable debug symbols.")]
         public string Debug { get; set; }
+
+        [Option('J', "jobs", Required = false, HelpText = "Max amount of jobs zig build is allowed to run.")]
+        public string Jobs { get; set; }
     }
 }
