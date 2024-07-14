@@ -7,8 +7,8 @@
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-        <PublishSingleFile>true</PublishSingleFile> 
-        <SelfContained>true</SelfContained>
+        <!-- <PublishSingleFile>true</PublishSingleFile> --> 
+        <!-- <SelfContained>true</SelfContained> -->
     </PropertyGroup>
 
     <PropertyGroup>

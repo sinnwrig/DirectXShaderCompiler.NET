@@ -1,4 +1,4 @@
-using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace DirectXShaderCompiler.NET;
@@ -24,7 +24,7 @@ internal unsafe struct NativeDxcIncludeResult
     internal nuint header_length;
 }
 
-internal unsafe delegate NativeDxcIncludeResult* NativeDxcIncludeFunction(IntPtr context, byte* headerNameUtf8); 
+internal unsafe delegate NativeDxcIncludeResult* NativeDxcIncludeFunction(IntPtr context, char* headerNameUtf8); 
 internal unsafe delegate int NativeDxcFreeIncludeFunction(IntPtr context, NativeDxcIncludeResult* includeResult);
 
 
@@ -35,12 +35,13 @@ internal unsafe struct NativeDxcIncludeCallbacks {
     internal void* free_func;
 }
 
+
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeDxcCompileOptions {
     // Required
-    internal byte* code; // utf-8 string pointer
+    internal char* code; // utf-16 string pointer
     internal nuint code_len;
-    internal byte** args; // Array of utf-8 string pointers
+    internal char** args; // Array of utf-16 string pointers
     internal nuint args_len;
 
     // Optional
@@ -48,7 +49,7 @@ internal unsafe struct NativeDxcCompileOptions {
 }
 
 
-internal static class DXCNative
+internal static partial class DXCNative
 {
     const string LibName = "dxcompiler";
 
@@ -179,45 +180,67 @@ internal static class DXCNative
     }
     */
 
-    const CallingConvention cconv = CallingConvention.Cdecl;
+// -----------------
+// NativeDxcCompiler
+// -----------------
 
+    [LibraryImport(LibName)]
+    [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
+    unsafe internal static partial NativeDxcCompiler* DxcInitialize();
 
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern NativeDxcCompiler* DxcInitialize();
+    [LibraryImport(LibName)]
+    [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
+    unsafe internal static partial void DxcFinalize(NativeDxcCompiler* compilerPtr);
 
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern void DxcFinalize(NativeDxcCompiler* compilerPtr);
+    [LibraryImport(LibName, StringMarshalling = StringMarshalling.Utf16)]
+    [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
+    unsafe internal static partial NativeDxcCompileResult* DxcCompile(NativeDxcCompiler* compilerPtr, NativeDxcCompileOptions* compileOptions);
 
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern NativeDxcCompileResult* DxcCompile(NativeDxcCompiler* compilerPtr, NativeDxcCompileOptions* compileOptions);
+// ----------------------
+// NativeDxcCompileResult
+// ----------------------
 
+    [LibraryImport(LibName)]
+    [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
+    unsafe internal static partial NativeDxcCompileError* DxcCompileResultGetError(NativeDxcCompileResult* resultPtr);
 
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern NativeDxcCompileError* DxcCompileResultGetError(NativeDxcCompileResult* resultPtr);
+    [LibraryImport(LibName)]
+    [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
+    unsafe internal static partial NativeDxcCompileObject* DxcCompileResultGetObject(NativeDxcCompileResult* resultPtr);
 
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern NativeDxcCompileObject* DxcCompileResultGetObject(NativeDxcCompileResult* resultPtr);
+    [LibraryImport(LibName)]
+    [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
+    unsafe internal static partial void DxcCompileResultRelease(NativeDxcCompileResult* resultPtr);
 
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern void DxcCompileResultRelease(NativeDxcCompileResult* resultPtr);
+// ----------------------
+// NativeDxcCompileObject
+// ----------------------
 
+    [LibraryImport(LibName)]
+    [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
+    unsafe internal static partial byte* DxcCompileObjectGetBytes(NativeDxcCompileObject* objectPtr);
 
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern byte* DxcCompileObjectGetBytes(NativeDxcCompileObject* objectPtr);
+    [LibraryImport(LibName)]
+    [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
+    unsafe internal static partial nuint DxcCompileObjectGetBytesLength(NativeDxcCompileObject* objectPtr);
 
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern nuint DxcCompileObjectGetBytesLength(NativeDxcCompileObject* objectPtr);
+    [LibraryImport(LibName)]
+    [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
+    unsafe internal static partial void DxcCompileObjectRelease(NativeDxcCompileObject* objectPtr);
 
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern void DxcCompileObjectRelease(NativeDxcCompileObject* objectPtr);
+// ---------------------
+// NativeDxcCompileError
+// ---------------------
 
+    [LibraryImport(LibName)]
+    [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
+    unsafe internal static partial char* DxcCompileErrorGetString(NativeDxcCompileError* errorPtr);
 
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern byte* DxcCompileErrorGetString(NativeDxcCompileError* errorPtr);
+    [LibraryImport(LibName)]
+    [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
+    unsafe internal static partial nuint DxcCompileErrorGetStringLength(NativeDxcCompileError* errorPtr);
 
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern nuint DxcCompileErrorGetStringLength(NativeDxcCompileError* errorPtr);
-
-    [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern void DxcCompileErrorRelease(NativeDxcCompileError* errorPtr);
+    [LibraryImport(LibName)]
+    [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
+    unsafe internal static partial void DxcCompileErrorRelease(NativeDxcCompileError* errorPtr);
 }
