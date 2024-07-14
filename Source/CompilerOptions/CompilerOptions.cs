@@ -16,6 +16,13 @@ public enum OptimizationLevel { O0, O1, O2, O3 }
 public enum MatrixPackMode { ColumnMajor, RowMajor }
 
 
+/// <summary>
+/// The options and settings available when compiling shaders.
+/// </summary>
+/// <remarks>
+/// This class is primarily a wrapper around native DXC command line arguments, 
+/// and therefore does not perform validation of certain input combinations that could break DXC and cause a segmentation fault.
+/// </remarks>
 public partial class CompilerOptions
 {   
     /// <summary> Enables agressive flattening </summary>

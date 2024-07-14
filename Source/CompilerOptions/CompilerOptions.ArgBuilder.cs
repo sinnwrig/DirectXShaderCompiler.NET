@@ -2,7 +2,6 @@ using System.Reflection;
 
 namespace DirectXShaderCompiler.NET;
 
-
 public partial class CompilerOptions
 {
     private enum AssignmentType { Equals, Spaced }

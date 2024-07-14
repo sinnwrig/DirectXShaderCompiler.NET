@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 namespace DirectXShaderCompiler.NET;
 
 
-public static class NativeStringUtility
+internal static class NativeStringUtility
 {
     private static unsafe byte* Alloc(byte[] bytes, out uint len)
     {
@@ -24,7 +24,7 @@ public static class NativeStringUtility
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static string Sanitize(string str, bool nullTerminate)
+    internal static string Sanitize(string str, bool nullTerminate)
     {
         if (!nullTerminate)
             return str;
@@ -32,17 +32,17 @@ public static class NativeStringUtility
         return str[^1] == '\0' ? str : str + '\0';
     }
 
-    public static byte[] GetASCIIBytes(string str, bool nullTerminate = true)
+    internal static byte[] GetASCIIBytes(string str, bool nullTerminate = true)
     {
         return Encoding.ASCII.GetBytes(Sanitize(str, nullTerminate));
     }
 
-    public static byte[] GetUTF8Bytes(string str, bool nullTerminate = true)
+    internal static byte[] GetUTF8Bytes(string str, bool nullTerminate = true)
     {
         return Encoding.UTF8.GetBytes(Sanitize(str, nullTerminate));
     }
 
-    public static byte[] GetUTF16Bytes(string str, bool nullTerminate = true, bool bigEndian = false)
+    internal static byte[] GetUTF16Bytes(string str, bool nullTerminate = true, bool bigEndian = false)
     {
         str = Sanitize(str, nullTerminate);
 
@@ -52,33 +52,33 @@ public static class NativeStringUtility
         return Encoding.Unicode.GetBytes(str);
     }
 
-    public static byte[] GetUTF32Bytes(string str, bool nullTerminate = true)
+    internal static byte[] GetUTF32Bytes(string str, bool nullTerminate = true)
     {
         return Encoding.UTF32.GetBytes(Sanitize(str, nullTerminate));
     }
 
-    public static unsafe byte* GetASCIIPtr(string str, out uint len, bool nullTerminate = true) => 
+    internal static unsafe byte* GetASCIIPtr(string str, out uint len, bool nullTerminate = true) => 
         Alloc(GetASCIIBytes(str, nullTerminate), out len);
 
-    public static unsafe byte* GetUTF8Ptr(string str, out uint len, bool nullTerminate = true) => 
+    internal static unsafe byte* GetUTF8Ptr(string str, out uint len, bool nullTerminate = true) => 
         Alloc(GetUTF8Bytes(str, nullTerminate), out len);
 
-    public static unsafe byte* GetUTF16Ptr(string str, out uint len, bool nullTerminate = true, bool bigEndian = false) => 
+    internal static unsafe byte* GetUTF16Ptr(string str, out uint len, bool nullTerminate = true, bool bigEndian = false) => 
         Alloc(GetUTF16Bytes(str, nullTerminate, bigEndian), out len);
 
-    public static unsafe byte* GetUTF32Ptr(string str, out uint len, bool nullTerminate = true) => 
+    internal static unsafe byte* GetUTF32Ptr(string str, out uint len, bool nullTerminate = true) => 
         Alloc(GetUTF32Bytes(str, nullTerminate), out len);
 
         
-    public static GCHandle GetASCIIHandle(string str, out uint len, bool nullTerminate = true) => 
+    internal static GCHandle GetASCIIHandle(string str, out uint len, bool nullTerminate = true) => 
         Pin(GetASCIIBytes(str, nullTerminate), out len);
 
-    public static GCHandle GetUTF8Handle(string str, out uint len, bool nullTerminate = true) => 
+    internal static GCHandle GetUTF8Handle(string str, out uint len, bool nullTerminate = true) => 
         Pin(GetUTF8Bytes(str, nullTerminate), out len);
 
-    public static GCHandle GetUTF16Handle(string str, out uint len, bool nullTerminate = true, bool bigEndian = false) => 
+    internal static GCHandle GetUTF16Handle(string str, out uint len, bool nullTerminate = true, bool bigEndian = false) => 
         Pin(GetUTF16Bytes(str, nullTerminate, bigEndian), out len);
 
-    public static GCHandle GetUTF32Handle(string str, out uint len, bool nullTerminate = true) => 
+    internal static GCHandle GetUTF32Handle(string str, out uint len, bool nullTerminate = true) => 
         Pin(GetUTF32Bytes(str, nullTerminate), out len);
 }

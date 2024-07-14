@@ -1,14 +1,30 @@
-﻿﻿using DirectXShaderCompiler.NET;
+﻿﻿using System.Diagnostics;
+using DirectXShaderCompiler.NET;
 
 namespace Application;
 
 public class Program
-{        
-    public static string IncludeFile(string filename)
+{       
+    struct FileIncluder
     {
-        Console.WriteLine($"Including file: {filename}");
+        int depth;
 
-        return "#define INCLUDED_FUNC(x) x * 10 - sin(x)";
+        public string IncludeFile(string filename)
+        {
+            Console.WriteLine($"Including file {filename} at depth {depth}");
+            depth++;
+
+            if (filename == "./FileA.hlsl")
+                return "#include \"FileB.hlsl\"\n#include \"FileC.hlsl\"";
+
+            if (filename == "./FileB.hlsl")
+                return "#define INCLUDED_B_FUNC(x) x * 10 - sin(x)";
+
+            if (filename == "./FileC.hlsl")
+                return "#define INCLUDED_C_FUNC(x) x * 10 - sin(x)";
+        
+            return "//Nothing to see here";
+        }
     }
 
 
@@ -20,21 +36,28 @@ public class Program
             generateAsSpirV = true,
         };
 
-        Console.WriteLine(string.Join(' ', options.GetArgumentsArray()));
+        int cont = 10;
 
-        using ShaderCompiler compInstance = new ShaderCompiler();
+        if (args.Length > 0)
+            _ = int.TryParse(args[0], out cont);
 
-        CompilationResult result = compInstance.Compile(ShaderCode.HlslCode, options, IncludeFile);
-
-        if (result.compilationErrors != null)
+        Stopwatch watch = Stopwatch.StartNew();
+        for (int i = 0; i < cont; i++)
         {
-            Console.WriteLine("Errors compiling shader:");
-            Console.WriteLine(result.compilationErrors);
-            return;
+            FileIncluder finc = new();
+
+            CompilationResult result = ShaderCompiler.Compile(ShaderCode.HlslCode, options, finc.IncludeFile);
+
+            if (result.compilationErrors != null)
+            {
+                Console.WriteLine("Errors compiling shader:");
+                Console.WriteLine(result.compilationErrors);
+                return;
+            } 
         }
 
-        Console.WriteLine($"Success! {result.objectBytes.Length} bytes generated.");
+        watch.Stop();
 
-        Console.WriteLine("Completed all tasks");
+        Console.WriteLine($"Compiled {cont} shaders in {watch.Elapsed.TotalSeconds} seconds. Average time: {watch.Elapsed.TotalMilliseconds / cont} ms");
     }
 }

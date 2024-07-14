@@ -52,6 +52,43 @@ internal static class DXCNative
 {
     const string LibName = "dxcompiler";
 
+    /*
+
+    internal struct PlatformInfo
+    {
+        internal OSPlatform platform;
+        internal Architecture architecture;
+    
+        internal PlatformInfo(OSPlatform platform, Architecture architecture)
+        {
+            this.platform = platform;
+            this.architecture = architecture;
+        }
+    
+        internal static OSPlatform GetPlatform()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return OSPlatform.OSX;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) 
+                return OSPlatform.Linux;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) 
+                return OSPlatform.Windows;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD))
+                return OSPlatform.FreeBSD;
+            throw new Exception("Cannot determine operating system.");
+        }
+    
+        internal static PlatformInfo GetCurrentPlatform()
+        {
+            return new PlatformInfo(GetPlatform(), RuntimeInformation.ProcessArchitecture);
+        }
+    
+        public override readonly string ToString()
+        {
+            return $"({platform}, {architecture})";
+        }
+    }
+
     const string WinLib = LibName + ".dll";
     const string OSXLib = "lib" + LibName + ".dylib";
     const string LinuxLib = "lib" + LibName + ".so";
@@ -82,7 +119,7 @@ internal static class DXCNative
 
         DXCNative.additionalSearchPaths = additionalSearchPaths;
 
-        NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), DllImportResolver);
+        //NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), DllImportResolver);
 
         _assembliesResolved = true;
     }
@@ -140,6 +177,7 @@ internal static class DXCNative
 
         return NativeLibrary.Load(bestPath, assembly, DllImportSearchPath.AssemblyDirectory | DllImportSearchPath.ApplicationDirectory);
     }
+    */
 
     const CallingConvention cconv = CallingConvention.Cdecl;
 
@@ -171,7 +209,7 @@ internal static class DXCNative
     unsafe internal static extern nuint DxcCompileObjectGetBytesLength(NativeDxcCompileObject* objectPtr);
 
     [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern void DxcCompileObjectDeinit(NativeDxcCompileObject* objectPtr);
+    unsafe internal static extern void DxcCompileObjectRelease(NativeDxcCompileObject* objectPtr);
 
 
     [DllImport(LibName, CallingConvention = cconv)]
@@ -181,5 +219,5 @@ internal static class DXCNative
     unsafe internal static extern nuint DxcCompileErrorGetStringLength(NativeDxcCompileError* errorPtr);
 
     [DllImport(LibName, CallingConvention = cconv)]
-    unsafe internal static extern void DxcCompileErrorDeinit(NativeDxcCompileError* errorPtr);
+    unsafe internal static extern void DxcCompileErrorRelease(NativeDxcCompileError* errorPtr);
 }

@@ -3,30 +3,41 @@ using System.Runtime.InteropServices;
 
 namespace DirectXShaderCompiler.NET;
 
-public delegate string FileIncludeHandler(string includeName); 
+/// <summary>
+/// A delegate for shader header inclusion.
+/// </summary>
+/// <param name="includeName">The name of the header file being included.</param>
+/// <returns>Contents of the included header file.</returns>
+public delegate string FileIncludeHandler(string includeName);
 
-public class ShaderCompiler : IDisposable
+/// <summary>
+/// A static class that allows accessing shader compilation functionality found in the DirectXShaderCompiler. 
+/// </summary>
+public static class ShaderCompiler
 {
     private static void Main() { }
 
     private static unsafe NativeDxcCompiler* nativeCompiler = null;
 
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct DxcIncludeCallbackContext
+    static ShaderCompiler()
     {
-        internal FileIncludeHandler? includeHandler;
-    } 
+        unsafe
+        {
+            nativeCompiler = DXCNative.DxcInitialize(); 
+        }
+    }
 
     private static unsafe NativeDxcIncludeResult* IncludeFunction(IntPtr nativeContext, byte* headerNameUtf8)
     {
-        DxcIncludeCallbackContext context = Marshal.PtrToStructure<DxcIncludeCallbackContext>(nativeContext);
+        if (nativeContext == IntPtr.Zero)
+            return null;
 
         string? headerName = Marshal.PtrToStringUTF8((IntPtr)headerNameUtf8);
 
-        if (context.includeHandler != null && headerName != null)
+        if (headerName != null)
         {
-            string includeFile = context.includeHandler.Invoke(headerName);
+            FileIncludeHandler handler = Marshal.GetDelegateForFunctionPointer<FileIncludeHandler>(nativeContext);
+            string includeFile = handler.Invoke(headerName);
 
             NativeDxcIncludeResult includeResult = new NativeDxcIncludeResult
             {
@@ -34,7 +45,7 @@ public class ShaderCompiler : IDisposable
                 header_length = len
             };
 
-            return AllocStruct(includeResult);
+            return (NativeDxcIncludeResult*)AllocStruct(includeResult);
         }
 
         return null;
@@ -53,46 +64,48 @@ public class ShaderCompiler : IDisposable
         return 0;
     }
 
-    private static unsafe T* AllocStruct<T>(T type) where T : unmanaged
+    private static unsafe IntPtr AllocStruct<T>(T type) where T : struct
     {
-        IntPtr memPtr = Marshal.AllocHGlobal(sizeof(T));
+        IntPtr memPtr = Marshal.AllocHGlobal(Marshal.SizeOf<T>());
         Marshal.StructureToPtr(type, memPtr, false);
-        return (T*)memPtr;
+        return memPtr;
     }
 
-    public ShaderCompiler(string[]? searchPaths = null)
-    {
-        DXCNative.ResolveAssemblies(searchPaths);
-
-        unsafe
-        {
-            if (nativeCompiler == null)
-                nativeCompiler = DXCNative.DxcInitialize(); 
-            else
-                throw new Exception("Cannot have multiple compiler instances active simultaneously");
-        }
-    }
-
+    /// <summary>
+    /// Compiles a string of shader code.
+    /// </summary>
+    /// <param name="code">The code to compile.</param>
+    /// <param name="compilationOptions">The options to compile with.</param>
+    /// <param name="includeHandler">The include handler to use for header inclusion.</param>
+    /// <returns>A CompilationResult structure containing the resulting bytecode and possible errors.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public CompilationResult Compile(string code, CompilerOptions compilationOptions, FileIncludeHandler? includeHandler = null)
+    public static CompilationResult Compile(string code, CompilerOptions compilationOptions, FileIncludeHandler? includeHandler = null)
     {
         return Compile(code, compilationOptions.GetArgumentsArray(), includeHandler);
     }
 
+    /// <summary>
+    /// Compiles a string of shader code.
+    /// </summary>
+    /// <param name="code">The code to compile.</param>
+    /// <param name="compilerArgs">The arguments to compile the shader with.</param>
+    /// <param name="includeHandler">The include handler to use for header inclusion.</param>
+    /// <returns>A CompilationResult structure containing the resulting bytecode and possible errors.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public CompilationResult Compile(string code, string[] compilerArgs, FileIncludeHandler? includeHandler = null)
+    public static CompilationResult Compile(string code, string[] compilerArgs, FileIncludeHandler? includeHandler = null)
     {
         return Compile(NativeStringUtility.GetUTF8Bytes(code), compilerArgs.Select(x => NativeStringUtility.GetUTF8Bytes(x)).ToArray(), includeHandler);
     }
 
-    public unsafe CompilationResult Compile(byte[] codeUtf8, byte[][] compilerArgs, FileIncludeHandler? includeHandler = null)
-    {
-        DxcIncludeCallbackContext context = new DxcIncludeCallbackContext()
-        {
-            includeHandler = includeHandler
-        };
-    
-        GCHandle pinnedContext = GCHandle.Alloc(context, GCHandleType.Pinned); // Allocate context
+    /// <summary>
+    /// Compiles a string of shader code.
+    /// </summary>
+    /// <param name="codeUtf8">The utf-8 encoded string to compile.</param>
+    /// <param name="compilerArgs">The array of utf-8 encoded string arguments to compile the shader with.</param>
+    /// <param name="includeHandler">The include handler to use for header inclusion.</param>
+    /// <returns>A CompilationResult structure containing the resulting bytecode and possible errors.</returns>
+    public unsafe static CompilationResult Compile(byte[] codeUtf8, byte[][] compilerArgs, FileIncludeHandler? includeHandler = null)
+    {   
         GCHandle codePinned = GCHandle.Alloc(codeUtf8, GCHandleType.Pinned); // Pin code
 
         Span<GCHandle> argsPinned = stackalloc GCHandle[compilerArgs.Length];
@@ -100,7 +113,7 @@ public class ShaderCompiler : IDisposable
 
         for (int i = 0; i < compilerArgs.Length; i++)
         {
-            GCHandle pin = GCHandle.Alloc(compilerArgs[i]); // Pin argument
+            GCHandle pin = GCHandle.Alloc(compilerArgs[i], GCHandleType.Pinned); // Pin argument
 
             argsPinned[i] = pin;
             argsUtf8[i] = (byte*)pin.AddrOfPinnedObject();
@@ -108,7 +121,11 @@ public class ShaderCompiler : IDisposable
 
         NativeDxcIncludeCallbacks* callbacks = stackalloc NativeDxcIncludeCallbacks[1];
 
-        callbacks->include_ctx = (void*)pinnedContext.AddrOfPinnedObject();
+        if (includeHandler != null)
+            callbacks->include_ctx = (void*)Marshal.GetFunctionPointerForDelegate(includeHandler);
+        else
+            callbacks->include_ctx = null;
+
         callbacks->include_func = (void*)Marshal.GetFunctionPointerForDelegate<NativeDxcIncludeFunction>(IncludeFunction);
         callbacks->free_func = (void*)Marshal.GetFunctionPointerForDelegate<NativeDxcFreeIncludeFunction>(FreeFunction);
 
@@ -127,12 +144,10 @@ public class ShaderCompiler : IDisposable
         for (int i = 0; i < compilerArgs.Length; i++)
             argsPinned[i].Free(); // Free argument
 
-        pinnedContext.Free();
-
         return result;
     }
 
-    static unsafe CompilationResult GetResult(NativeDxcCompileResult* resultPtr)
+    private static unsafe CompilationResult GetResult(NativeDxcCompileResult* resultPtr)
     {
         NativeDxcCompileError* errorPtr = DXCNative.DxcCompileResultGetError(resultPtr);
 
@@ -145,7 +160,7 @@ public class ShaderCompiler : IDisposable
             nuint errorStringLen = DXCNative.DxcCompileErrorGetStringLength(errorPtr);
 
             compilationErrors = Marshal.PtrToStringUTF8((IntPtr)errorStringPtr, (int)errorStringLen);
-            DXCNative.DxcCompileErrorDeinit(errorPtr);
+            DXCNative.DxcCompileErrorRelease(errorPtr);
         }
         else
         {
@@ -156,7 +171,7 @@ public class ShaderCompiler : IDisposable
             objectBytes = new byte[(int)objectBytesLen];
             Marshal.Copy((IntPtr)objectBytesPtr, objectBytes, 0, (int)objectBytesLen);
 
-            DXCNative.DxcCompileObjectDeinit(objectPtr);
+            DXCNative.DxcCompileObjectRelease(objectPtr);
         }
 
         DXCNative.DxcCompileResultRelease(resultPtr);
@@ -166,29 +181,5 @@ public class ShaderCompiler : IDisposable
             objectBytes = objectBytes,
             compilationErrors = compilationErrors
         };
-    }
-
-    public void Dispose()
-    {
-        unsafe
-        {
-            if (nativeCompiler != null)
-                DXCNative.DxcFinalize(nativeCompiler);
-                
-            nativeCompiler = null;
-        }
-
-        GC.SuppressFinalize(this);
-    }
-
-    ~ShaderCompiler()
-    {
-        ConsoleColor prev = Console.ForegroundColor;
-        
-        Console.ForegroundColor = ConsoleColor.Yellow;
-        Console.WriteLine($"Warning: Native handle for {GetType().Name} was not properly deallocated. Ensure object is disposed by manually calling Dispose() or with a using statement.");
-        Console.ForegroundColor = prev;
-
-        Dispose();
     }
 }
