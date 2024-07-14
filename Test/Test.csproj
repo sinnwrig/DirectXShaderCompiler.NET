@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <PropertyGroup>
-        <RestoreSources>$(RestoreSources);../Source/bin/Release;https://api.nuget.org/v3/index.json</RestoreSources>
+        <RestoreSources>$(RestoreSources);../DirectXShaderCompiler.NET/bin/Release;https://api.nuget.org/v3/index.json</RestoreSources>
     </PropertyGroup>
 
     <ItemGroup>
