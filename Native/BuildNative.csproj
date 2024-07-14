@@ -6,16 +6,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="CommandLineParser" Version="2.9.1" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <Compile Include="BuildNative.cs" />
+        <PackageReference Include="CommandLineParser" Version="2.9.1" />
     </ItemGroup>
 
     <PropertyGroup>
-      <DefaultItemExcludes>$(DefaultItemExcludes);**\*.*</DefaultItemExcludes>
+		<!-- Ignore the entire directory since some C# files exist in tools/clang/tools/dotnetc. Instead, we specify the C# file we want with <Compile Include/> -->
+        <DefaultItemExcludes>$(DefaultItemExcludes);**\*.*</DefaultItemExcludes>
     </PropertyGroup>
 
+	<ItemGroup>
+        <Compile Include="BuildNative.cs" />
+    </ItemGroup>
 
 </Project>
