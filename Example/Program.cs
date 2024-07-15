@@ -1,4 +1,5 @@
-﻿﻿using System.Diagnostics;
+﻿﻿using System;
+using System.Diagnostics;
 using DirectXShaderCompiler.NET;
 
 namespace Application;
@@ -35,6 +36,8 @@ public class Program
             entryPoint = "pixel",
             generateAsSpirV = true,
         };
+
+        Console.WriteLine(string.Join(" ", options.GetArgumentsArray()));
 
         int cont = 10;
 
