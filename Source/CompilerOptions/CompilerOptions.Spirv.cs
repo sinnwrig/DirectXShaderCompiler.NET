@@ -1,5 +1,23 @@
 namespace DirectXShaderCompiler.NET;
 
+public struct RegisterBinding
+{
+    public int typeNumber;
+    public int space;
+    public int binding;
+    public int set;
+}
+
+public enum TargetEnvironment
+{
+    Vulkan1_0,
+    Vulkan1_1,
+    Vulkan1_1Spirv1_4, 
+    Vulkan1_2, 
+    Vulkan1_3, 
+    Universal1_5,
+}
+
 public partial class CompilerOptions
 {   
     /// <summary> Specify whitelist of debug info category (file -> source -> line, tool, vulkan-with-source) </summary>
@@ -43,8 +61,7 @@ public partial class CompilerOptions
     public bool addReflectionAid = false; 
 
     /// <summary> Specify the target environment: vulkan1.0 (default), vulkan1.1, vulkan1.1spirv1.4, vulkan1.2, vulkan1.3, or universal1.5 </summary>
-    [CompilerOption(name:"-fspv-target-env", Assignment = AssignmentType.Equals)]
-    public string? targetEnvironment = null; 
+    public TargetEnvironment? targetEnvironment = null; 
     
     /// <summary> Assume the legacy matrix order (row major) when accessing raw buffers (e.g., ByteAdddressBuffer) </summary>
     [CompilerOption(name:"-fspv-use-legacy-buffer-matrix-order")]        
@@ -54,37 +71,31 @@ public partial class CompilerOptions
     [CompilerOption(name:"-fvk-auto-shift-bindings")]                    
     public bool autoShiftBindings = false; 
 
-    /// <summary> Specify Vulkan binding number shift for b-type register: <shift> <space>  </summary>
-    [CompilerOption(name:"-fvk-b-shift")]                                
-    public string? bindingNumberShift = null; 
+    /// <summary> Specify Vulkan binding number and set number for the $Globals cbuffer: <binding> <set> </summary>                         
+    public (int, int)? globalBindingNumber = null; 
 
-    /// <summary> Specify Vulkan binding number and set number for the $Globals cbuffer: <binding> <set> </summary>
-    [CompilerOption(name:"-fvk-bind-globals")]                           
-    public string? globalBindingNumber = null; 
-
-    /// <summary> Specify Vulkan descriptor set and binding for a specific register: <type-number> <space> <binding> <set> </summary>
-    [CompilerOption(name:"-fvk-bind-register")]                          
-    public string? registerBindings = null; 
+    /// <summary> Specify Vulkan descriptor set and binding for specific registers </summary>
+    public List<RegisterBinding> registerBindings { get; private set; } = new(); 
 
     /// <summary> Negate SV_Position.y before writing to stage output in VS/DS/GS to accommodate Vulkan's coordinate system </summary>
     [CompilerOption(name:"-fvk-invert-y")]                               
     public bool invertY = false; 
 
-    /// <summary> Specify Vulkan binding number shift for s-type register: <shift> <space>  </summary>
-    [CompilerOption(name:"-fvk-s-shift")]                                
-    public string? SRegisterBindingShift = null; 
-
     /// <summary> Follow Vulkan spec to use gl_BaseInstance as the first vertex instance, which makes SV_InstanceID = gl_InstanceIndex - gl_BaseInstance (without this option, SV_InstanceID = gl_InstanceIndex) </summary>
     [CompilerOption(name:"-fvk-support-nonzero-base-instance")]          
     public bool nonzeroBaseInstance = false; 
-    
-    /// <summary> Specify Vulkan binding number shift for t-type register: <shift> <space>  </summary>
-    [CompilerOption(name:"-fvk-t-shift")]                                
-    public string? TRegisterBindingShift = null; 
 
-    /// <summary> Specify Vulkan binding number shift for u-type register: <shift> <space>  </summary>
-    [CompilerOption(name:"-fvk-u-shift")]                                
-    public string? URegisterBindingShift = null; 
+    /// <summary> Specify Vulkan binding number shift for b-type register: <shift> <space>  </summary>                             
+    public (int, int)? BRegisterBindingShift = null; 
+
+    /// <summary> Specify Vulkan binding number shift for s-type register: <shift> <space>  </summary>                               
+    public (int, int)? SRegisterBindingShift = null; 
+    
+    /// <summary> Specify Vulkan binding number shift for t-type register: <shift> <space>  </summary>                              
+    public (int, int)? TRegisterBindingShift = null; 
+
+    /// <summary> Specify Vulkan binding number shift for u-type register: <shift> <space>  </summary>                              
+    public (int, int)? URegisterBindingShift = null; 
 
     /// <summary> Use DirectX memory layout for Vulkan resources </summary>
     [CompilerOption(name:"-fvk-use-dx-layout")]                          
@@ -109,4 +120,59 @@ public partial class CompilerOptions
     /// <summary> Generate SPIR-V code </summary>
     [CompilerOption(name:"-spirv")]                                      
     public bool generateAsSpirV = false; 
+
+
+    private void AddSPIRVArgs(List<string> args)
+    {
+        AddRegisterBindings(args);
+        AddRegisterShifts(args);
+
+        if (globalBindingNumber != null)
+        {
+            args.Add("-fvk-bind-globals");
+            args.Add(globalBindingNumber.Value.Item1.ToString());
+            args.Add(globalBindingNumber.Value.Item2.ToString());
+        }
+
+        if (targetEnvironment != null)
+        {
+            args.Add($"-fspv-target-env={targetEnvironment.Value.ToString().ToLower()}");
+        }
+    }
+
+
+    private void AddRegisterBindings(List<string> args)
+    {
+        foreach (var registerBinding in registerBindings)
+        {
+            args.Add("-fvk-bind-register");
+            args.Add(registerBinding.typeNumber.ToString());
+            args.Add(registerBinding.space.ToString());
+            args.Add(registerBinding.binding.ToString());
+            args.Add(registerBinding.set.ToString());
+        }
+    }
+
+
+    private void AddRegisterShifts(List<string> args)
+    {
+        void AddShift((int, int) shift, string name)
+        {
+            args.Add(name);
+            args.Add(shift.Item1.ToString());
+            args.Add(shift.Item2.ToString());
+        }
+
+        if (BRegisterBindingShift != null)
+            AddShift(BRegisterBindingShift.Value, "-fvk-b-shift");
+
+        if (SRegisterBindingShift != null)
+            AddShift(SRegisterBindingShift.Value, "-fvk-s-shift");
+
+        if (TRegisterBindingShift != null)
+            AddShift(TRegisterBindingShift.Value, "-fvk-t-shift");
+        
+        if (URegisterBindingShift != null)
+            AddShift(URegisterBindingShift.Value, "-fvk-u-shift");
+    }
 }

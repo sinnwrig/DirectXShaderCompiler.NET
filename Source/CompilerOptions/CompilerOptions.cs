@@ -9,11 +9,20 @@ public enum Linkage { Internal, External }
 
 public enum FlowControlMode { Avoid, Prefer }
 
-public enum DebugInfoType { Normal, Slim, Random }
+public enum DebugInfoType { Normal, Slim }
 
 public enum OptimizationLevel { O0, O1, O2, O3 }
 
 public enum MatrixPackMode { ColumnMajor, RowMajor }
+
+/// <summary> How shaders should compute their signing hash </summary>
+public enum HashComputationMode 
+{ 
+    /// <summary> Compute Shader Hash considering source information </summary>
+    Source, 
+    /// <summary> Compute Shader Hash considering only output binary </summary>
+    BinaryOnly 
+}
 
 
 /// <summary>
@@ -45,9 +54,10 @@ public partial class CompilerOptions
     [CompilerOption(name:"-denorm")]
     public DenormalType? denormalValue = null; 
 
-    /// <summary> Disables support for payload access qualifiers for raytracing payloads in SM 6.7. </summary>
-    [CompilerOption(name:"-disable-payload-qualifiers")]
-    public bool disablePayloadQualifiers = false; 
+    /// <summary> Disables/enables support for payload access qualifiers for raytracing payloads in SM 6.6/6.7. </summary>
+    [CompilerOption(name:"-disable-payload-qualifiers", value:0)]
+    [CompilerOption(name:"-enable-payload-qualifiers", value:1)]
+    public bool? payloadQualifiers = null; 
     
     /// <summary> Enable 16bit types and disable min precision types. Available in HLSL 2018 and shader model 6.2 </summary>
     [CompilerOption(name:"-enable-16bit-types")]
@@ -57,14 +67,10 @@ public partial class CompilerOptions
     [CompilerOption(name:"-enable-lifetime-markers")]
     public bool enableLifetimeMarkers = false; 
 
-    /// <summary> Enables support for payload access qualifiers for raytracing payloads in SM 6.6. </summary>
-    [CompilerOption(name:"-enable-payload-qualifiers")]
-    public bool enablePayloadQualifiers = false; 
-
     /// <summary> Set default encoding for source inputs and text outputs (utf8|utf16(win)|utf32(*nix)|wide) default=utf8 </summary>
-    /// <remarks> Interop implementation details require encoding to be utf-8 only. As such, this option cannot be changed. </remarks>
+    /// <remarks> Interop implementation details require encoding to be utf-16 only. As such, this option cannot be changed. </remarks>
     [CompilerOption(name:"-encoding")]
-    public readonly string? encoding = "utf8"; 
+    public readonly string? encoding = "utf16"; 
 
     /// <summary> Only export shaders when compiling a library </summary>
     [CompilerOption(name:"-export-shaders-only")]
@@ -133,19 +139,19 @@ public partial class CompilerOptions
     
     /// <summary> Output object file </summary>
     [CompilerOption(name:"-Fo")]
-    public string? objectOutputName = null; 
+    public string? objectOutputFile = null; 
 
     /// <summary> Output reflection to the given file </summary>
     [CompilerOption(name:"-Fre")]
-    public string? reflectionOutputName = null; 
+    public string? reflectionOutputFile = null; 
 
     /// <summary> Output root signature to the given file </summary>
     [CompilerOption(name:"-Frs")]
-    public string? rootSignatureOutputName = null; 
+    public string? rootSignatureOutputFile = null; 
 
     /// <summary> Output shader hash to the given file </summary>
     [CompilerOption(name:"-Fsh")]
-    public string? hashOutputName = null; 
+    public string? hashOutputFile = null; 
 
     /// <summary> Print time report </summary>
     [CompilerOption(name:"-ftime-report")]
@@ -177,7 +183,7 @@ public partial class CompilerOptions
 
     /// <summary> HLSL version (2016, 2017, 2018, 2021). Default is 2021 </summary>
     [CompilerOption(name:"-HV")]
-    public LanguageVersion? languageVersion = null; 
+    public LanguageVersion? languageVersion = LanguageVersion._2021; 
 
     /// <summary> Show header includes and nesting depth </summary>
     [CompilerOption(name:"-H")]
@@ -254,7 +260,7 @@ public partial class CompilerOptions
     [CompilerOption(name:"-WX")]
     public bool warningsAsErrors = false; 
 
-    /// <summary> Debug info type  </summary>
+    /// <summary> Debug info type </summary>
     [CompilerOption(name:"-Zs", value:(int)DebugInfoType.Slim)]
     [CompilerOption(name:"-Zi", value:(int)DebugInfoType.Normal)]
     public DebugInfoType? debugInfo = null; 
@@ -264,13 +270,10 @@ public partial class CompilerOptions
     [CompilerOption(name:"-Zpc", value:(int)MatrixPackMode.ColumnMajor)]
     public MatrixPackMode? matrixPackMode = null; 
     
-    /// <summary> Compute Shader Hash considering only output binary </summary>
-    [CompilerOption(name:"-Zsb")]
-    public bool computeBinaryHash = false; 
-    
-    /// <summary> Compute Shader Hash considering source information </summary>
-    [CompilerOption(name:"-Zss")]
-    public bool computeSourceHash = false; 
+    /// <summary> How the shader signing hash should be computed </summary>
+    [CompilerOption(name:"-Zsb", value:(int)HashComputationMode.BinaryOnly)]
+    [CompilerOption(name:"-Zss", value:(int)HashComputationMode.Source)]
+    public HashComputationMode? hashComputationMode = null; 
 
     /// <summary> Force finite math only in shader </summary>
     [CompilerOption(name:"-fno-finite-math-only", value:0)]

@@ -132,6 +132,7 @@ public partial class CompilerOptions
 
         AddMacros(args);
         AddWarnings(args);
+        AddSPIRVArgs(args);
 
         return args.ToArray();
     }
