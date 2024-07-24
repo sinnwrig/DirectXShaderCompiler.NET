@@ -1,6 +1,6 @@
 # DirectXShaderCompiler.NET: cross-platform C# wrapper for DirectXShaderCompiler 
 
-A cross-platform managed wrapper written in C# to enable compiling HLSL code using Microsoft's DirectX Shader Compiler. 
+A cross-platform .NET 8.0 wrapper for Microsoft's DirectX Shader Compiler, written in C#. 
 
 [![NuGet](https://img.shields.io/nuget/v/DirectXShaderCompiler.NET.svg)](https://www.nuget.org/packages/DirectXShaderCompiler.NET)
 
