@@ -39,11 +39,8 @@ float4 pixel(VertexOutput input) : SV_Target {
 
     public static void Main(string[] args)
     {
-        // Define the shader profile being targeted. In this case the shader is a 6.0 pixel (fragment) shader.
-        ShaderProfile profile = new ShaderProfile(ShaderType.Pixel, 6, 0);
-
         // Define the compilation options
-        CompilerOptions options = new CompilerOptions(profile)
+        CompilerOptions options = new CompilerOptions(ShaderType.Fragment.ToProfile(6, 0))
         {
             entryPoint = "pixel", // The entry-point function. Entry point defaults to 'main' when not specified.
             generateAsSpirV = true, // Generate SPIR-V bytecode instead of DXIL.
@@ -131,34 +128,18 @@ This class contains nearly all command-line options specified by DXC.exe. Most o
  
 ### ShaderProfile
  
-An abstraction over the shader profile inputs that DXC accepts. 
+An enum denoting the different shader profiles accepted by DXC. 
  
-- Methods
-  - `new ShaderProfile(ShaderType type, int version = 6, int subVersion = 0) (Constructor)`
-    - Returns a new instance of `ShaderProfile` with the given type and version.
- 
-- Fields
-  - `Type`:`enum`
-    - The type of this shader profile.
-  - `Version`:`int`
-    - The major version of this shader profile. Minimum major version compiled by DXC is 6.
-  - `SubVersion`:`int`
-    - The minor version of this shader profile. Clamped between 0-8.
- 
-### ShaderType
- 
-An enum denoting the different shader types accepted by DXC.
- 
-Values include:
-  - Pixel
-  - Vertex
-  - Hull
-  - Geometry
-  - Domain
-  - Compute
-  - Library
-  - Mesh
-  - Amplification
+The following profile values exist:
+  - Fragment_6_<0-8>
+  - Vertex_6_<0-8> 
+  - Geometry_6_<0-8>
+  - Hull_6_<0-8>
+  - Domain_6_<0-8>
+  - Compute_6_<0-8>
+  - Library_6_<1-8>
+  - Mesh_6_<5-8>
+  - Amplification_6_<5-8>
  
 # Native Details
  
