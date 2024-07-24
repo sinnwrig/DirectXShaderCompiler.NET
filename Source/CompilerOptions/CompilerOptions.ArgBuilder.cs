@@ -26,7 +26,7 @@ public partial class CompilerOptions
     
     static CompilerOptions()
     {
-        fields = new();
+        fields = [];
         foreach (FieldInfo fi in typeof(CompilerOptions).GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
         {
             CompilerOptionAttribute[] attribs = fi.GetCustomAttributes<CompilerOptionAttribute>().ToArray();
@@ -78,7 +78,7 @@ public partial class CompilerOptions
         // Only one option- pass enum as string value
         if (options.Length == 1)
         {
-            SetStringOption(args, options[0], enumValue.ToString().Remove('_'));
+            SetStringOption(args, options[0], enumValue.ToString().Replace("_", ""));
             return;
         }
 
@@ -120,6 +120,9 @@ public partial class CompilerOptions
         {
             AddOption(args, pair.Value);
         }
+
+        args.Add("-T");
+        args.Add(ShaderProfileExtensions.ToString(profile));
 
         AddMacros(args);
         AddWarnings(args);

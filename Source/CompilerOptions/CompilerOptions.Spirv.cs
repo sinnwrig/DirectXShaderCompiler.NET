@@ -48,11 +48,14 @@ public partial class CompilerOptions
     [CompilerOption(name:"-fspv-flatten-resource-arrays")]               
     public bool flattenResourceArrays = false; 
 
-    /// <summary> Preserves all bindings declared within the module, even when those bindings are unused </summary>
+    /// <summary> Set the maxumum value for an id in the SPIR-V binary. Default if 0x3FFFFF, which is the largest value all drivers must support. </summary>
+    public (int, int)? maximumIDValue = null;
+
+    /// <summary> Preserves all bindings declared within the module, even when those bindings are unused. </summary>
     [CompilerOption(name:"-fspv-preserve-bindings")]                     
     public bool preserveBindings = false; 
 
-    /// <summary> Preserves all interface variables in the entry point, even when those variables are unused </summary>
+    /// <summary> Preserves all interface variables in the entry point, even when those variables are unused. </summary>
     [CompilerOption(name:"-fspv-preserve-interface")]                    
     public bool preserveInterface = false; 
 
@@ -140,6 +143,13 @@ public partial class CompilerOptions
             args.Add("-fvk-bind-globals");
             args.Add(globalBindingNumber.Value.Item1.ToString());
             args.Add(globalBindingNumber.Value.Item2.ToString());
+        }
+
+        if (maximumIDValue != null)
+        {
+            args.Add("-fspv-max-id");
+            args.Add(maximumIDValue.Value.Item1.ToString());
+            args.Add(maximumIDValue.Value.Item2.ToString());
         }
 
         if (targetEnvironment != null)

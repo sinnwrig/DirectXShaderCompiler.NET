@@ -80,9 +80,9 @@ public partial class CompilerOptions
     public bool enableLifetimeMarkers = false; 
 
     /// <summary> Set default encoding for source inputs and text outputs (utf8|utf16(win)|utf32(*nix)|wide) default=utf8 </summary>
-    /// <remarks> Interop implementation details require encoding to be utf-16 only. As such, this option cannot be changed. </remarks>
+    /// <remarks> Interop implementation details require encoding to be utf-8 only. As such, this option cannot be changed. </remarks>
     [CompilerOption(name:"-encoding")]
-    public readonly string? encoding = "utf16"; 
+    public readonly string? encoding = "utf8"; 
 
     /// <summary> Only export shaders when compiling a library </summary>
     [CompilerOption(name:"-export-shaders-only")]
@@ -244,14 +244,13 @@ public partial class CompilerOptions
 
     /// <summary> Assume that UAVs/SRVs may alias </summary>
     [CompilerOption(name:"-res-may-alias")]
-    public bool assumeResAliasing = false; 
+    public bool assumeResourceAliasing = false; 
 
     /// <summary> Read root signature from a #define </summary>
     [CompilerOption(name:"-rootsig-define")]
     public string? rootSignatureDefine = null;
 
-    /// <summary> Set target profile </summary>
-    [CompilerOption(name:"-T")]
+    /// <summary> Target shader profile </summary>
     public ShaderProfile profile; 
 
     /// <summary> Disable validation </summary>

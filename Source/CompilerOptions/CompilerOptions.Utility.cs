@@ -6,7 +6,7 @@ public partial class CompilerOptions
     [CompilerOption(name:"-dumpbin")]
     public bool dumpBin = false; 
 
-    /// <summary> Extract root signature from shader bytecode (must be used with /Fo <file>) </summary>
+    /// <summary> Extract root signature from shader bytecode (must be used with /Fo 'file') </summary>
     [CompilerOption(name:"-extractrootsignature")]                       
     public bool extractRootSignature = false; 
     
@@ -14,7 +14,7 @@ public partial class CompilerOptions
     [CompilerOption(name:"-getprivate")] 
     public string? privateDataFile = null; 
     
-    /// <summary> Link list of libraries provided in <inputs> argument separated by ';' </summary>
+    /// <summary> Link list of libraries provided in 'inputs' argument separated by ';' </summary>
     [CompilerOption(name:"-link")] 
     public bool? link = null; 
 
@@ -30,19 +30,19 @@ public partial class CompilerOptions
     [CompilerOption(name:"-Qsource_in_debug_module")]
     public bool embedSourcePDB = false;      
     
-    /// <summary> Strip debug information from 4_0+ shader bytecode  (must be used with /Fo <file>) </summary>
+    /// <summary> Strip debug information from 4_0+ shader bytecode  (must be used with /Fo 'file') </summary>
     [CompilerOption(name:"-Qstrip_debug")]                               
     public bool stripDebugPDB = false; 
     
-    /// <summary> Strip private data from shader bytecode  (must be used with /Fo <file>) </summary>
+    /// <summary> Strip private data from shader bytecode  (must be used with /Fo 'file') </summary>
     [CompilerOption(name:"-Qstrip_priv")]                                
     public bool stripPrivate = false; 
     
-    /// <summary> Strip reflection data from shader bytecode  (must be used with /Fo <file>) </summary>
+    /// <summary> Strip reflection data from shader bytecode  (must be used with /Fo 'file') </summary>
     [CompilerOption(name:"-Qstrip_reflect")]                             
     public bool stripReflection = false; 
     
-    /// <summary> Strip root signature data from shader bytecode  (must be used with /Fo <file>) </summary>
+    /// <summary> Strip root signature data from shader bytecode  (must be used with /Fo 'file') </summary>
     [CompilerOption(name:"-Qstrip_rootsignature")]                       
     public bool stripRootSignature = false; 
     
