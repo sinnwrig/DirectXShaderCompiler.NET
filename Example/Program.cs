@@ -32,7 +32,7 @@ public class Program
 
     public static void Main(string[] args)
     {
-        CompilerOptions options = new CompilerOptions(ShaderProfile.Fragment_6_0)
+        CompilerOptions options = new CompilerOptions(ShaderType.Fragment.ToProfile(6, 0))
         {
             entryPoint = "pixel",
             generateAsSpirV = true,
