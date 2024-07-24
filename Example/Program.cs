@@ -8,12 +8,13 @@ public class Program
 {       
     struct FileIncluder
     {
-        int depth;
+        int includeCount;
 
         public string IncludeFile(string filename)
         {
-            Console.WriteLine($"Including file {filename} at depth {depth}");
-            depth++;
+            // Shows persistent property values even when being invoked from an (indirect) unmanaged context
+            Console.WriteLine($"\tIncluded file count {includeCount}");
+            includeCount++;
 
             if (filename == "./FileA.hlsl")
                 return "#include \"FileB.hlsl\"\n#include \"FileC.hlsl\"";
@@ -24,31 +25,34 @@ public class Program
             if (filename == "./FileC.hlsl")
                 return "#define INCLUDED_C_FUNC(x) x * 10 - sin(x)";
         
-            return "//Nothing to see here";
+            return "// Nothing to see here";
         }
     }
 
 
     public static void Main(string[] args)
     {
-        CompilerOptions options = new CompilerOptions(new ShaderProfile(ShaderType.Pixel, 6, 0))
+        CompilerOptions options = new CompilerOptions(ShaderProfile.Fragment_6_0)
         {
             entryPoint = "pixel",
             generateAsSpirV = true,
         };
 
-        Console.WriteLine(string.Join(" ", options.GetArgumentsArray()));
+        Console.WriteLine("Compilation options:");
+        Console.WriteLine('\t' + string.Join(" ", options.GetArgumentsArray()));
 
         int cont = 10;
 
         if (args.Length > 0)
             _ = int.TryParse(args[0], out cont);
 
+        Console.WriteLine($"\nCompiling {cont} shaders\n");
         Stopwatch watch = Stopwatch.StartNew();
         for (int i = 0; i < cont; i++)
         {
             FileIncluder finc = new();
 
+            Console.WriteLine($"Compiling shader {i}");
             CompilationResult result = ShaderCompiler.Compile(ShaderCode.HlslCode, options, finc.IncludeFile);
 
             if (result.compilationErrors != null)
@@ -61,6 +65,6 @@ public class Program
 
         watch.Stop();
 
-        Console.WriteLine($"Compiled {cont} shaders in {watch.Elapsed.TotalSeconds} seconds. Average time: {watch.Elapsed.TotalMilliseconds / cont} ms");
+        Console.WriteLine($"\nCompiled {cont} shaders in {watch.Elapsed.TotalSeconds} seconds. Average time: {watch.Elapsed.TotalMilliseconds / cont} ms");
     }
 }
