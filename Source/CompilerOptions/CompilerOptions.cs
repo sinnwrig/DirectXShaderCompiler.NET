@@ -1,28 +1,32 @@
 namespace DirectXShaderCompiler.NET;
 
+#pragma warning disable 1591
 
+/// <summary> The denormal type DXC should use </summary>
 public enum DenormalType { Any, Preserve, Ftz }
 
+/// <summary> HLSL language versions consumed by DXC </summary>
 public enum LanguageVersion { _2016, _2017, _2018, _2021 }
 
+/// <summary> Library linkage type </summary>
 public enum Linkage { Internal, External }
 
+/// <summary> How DXC should handle flow control constructs </summary>
 public enum FlowControlMode { Avoid, Prefer }
 
+/// <summary> The debug info output type </summary>
 public enum DebugInfoType { Normal, Slim }
 
+/// <summary> Shader optimization level </summary>
 public enum OptimizationLevel { O0, O1, O2, O3 }
 
+/// <summary> How DXC should pack shader matrices </summary>
 public enum MatrixPackMode { ColumnMajor, RowMajor }
 
 /// <summary> How shaders should compute their signing hash </summary>
-public enum HashComputationMode 
-{ 
-    /// <summary> Compute Shader Hash considering source information </summary>
-    Source, 
-    /// <summary> Compute Shader Hash considering only output binary </summary>
-    BinaryOnly 
-}
+public enum HashComputationMode { FromSource, FromBinaryOnly }
+
+#pragma warning restore 1591
 
 
 /// <summary>
@@ -34,6 +38,14 @@ public enum HashComputationMode
 /// </remarks>
 public partial class CompilerOptions
 {   
+    /// <summary>
+    /// Creates a new CompilerOptions instance with a given profile
+    /// </summary>
+    public CompilerOptions(ShaderProfile profile)
+    {
+        this.profile = profile;
+    }
+
     /// <summary> Enables agressive flattening </summary>
     [CompilerOption(name:"-all-resources-bound")]
     public bool allResourcesBound = false; 
@@ -173,6 +185,7 @@ public partial class CompilerOptions
     [CompilerOption(name:"-Ges")]
     public bool strictMode = false; 
 
+    /// <summary> How flow control constructs should be handled (prefer them or avoid them) </summary>
     [CompilerOption(name:"-Gfp", value:(int)FlowControlMode.Prefer)]
     [CompilerOption(name:"-Gfa", value:(int)FlowControlMode.Avoid)]
     public FlowControlMode? flowControlMode;
@@ -233,6 +246,7 @@ public partial class CompilerOptions
     [CompilerOption(name:"-res-may-alias")]
     public bool assumeResAliasing = false; 
 
+    /// <summary> Read root signature from a #define </summary>
     [CompilerOption(name:"-rootsig-define")]
     public string? rootSignatureDefine = null;
 
@@ -252,7 +266,7 @@ public partial class CompilerOptions
     [CompilerOption(name:"-Vi")]
     public bool displayIncludeDetails = false; 
 
-    /// <summary> Use <name> as variable name in header file </summary>
+    /// <summary> Use as variable name in header file </summary>
     [CompilerOption(name:"-Vn")]
     public string? variableName = null; 
     
@@ -271,8 +285,8 @@ public partial class CompilerOptions
     public MatrixPackMode? matrixPackMode = null; 
     
     /// <summary> How the shader signing hash should be computed </summary>
-    [CompilerOption(name:"-Zsb", value:(int)HashComputationMode.BinaryOnly)]
-    [CompilerOption(name:"-Zss", value:(int)HashComputationMode.Source)]
+    [CompilerOption(name:"-Zsb", value:(int)HashComputationMode.FromBinaryOnly)]
+    [CompilerOption(name:"-Zss", value:(int)HashComputationMode.FromSource)]
     public HashComputationMode? hashComputationMode = null; 
 
     /// <summary> Force finite math only in shader </summary>

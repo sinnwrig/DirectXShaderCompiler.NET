@@ -1,5 +1,10 @@
 namespace DirectXShaderCompiler.NET;
 
+#pragma warning disable 1591
+
+/// <summary>
+/// Modification to a Vulkan descriptor set and binding
+/// </summary>
 public struct RegisterBinding
 {
     public int typeNumber;
@@ -8,6 +13,7 @@ public struct RegisterBinding
     public int set;
 }
 
+/// <summary> Target Vulkan environments DXC supports </summary>
 public enum TargetEnvironment
 {
     Vulkan1_0,
@@ -17,6 +23,8 @@ public enum TargetEnvironment
     Vulkan1_3, 
     Universal1_5,
 }
+
+#pragma warning restore 1591
 
 public partial class CompilerOptions
 {   
@@ -71,7 +79,7 @@ public partial class CompilerOptions
     [CompilerOption(name:"-fvk-auto-shift-bindings")]                    
     public bool autoShiftBindings = false; 
 
-    /// <summary> Specify Vulkan binding number and set number for the $Globals cbuffer: <binding> <set> </summary>                         
+    /// <summary> Specify Vulkan binding number and set number for the $Globals cbuffer: 'binding' 'set' </summary>                         
     public (int, int)? globalBindingNumber = null; 
 
     /// <summary> Specify Vulkan descriptor set and binding for specific registers </summary>
@@ -85,16 +93,16 @@ public partial class CompilerOptions
     [CompilerOption(name:"-fvk-support-nonzero-base-instance")]          
     public bool nonzeroBaseInstance = false; 
 
-    /// <summary> Specify Vulkan binding number shift for b-type register: <shift> <space>  </summary>                             
+    /// <summary> Specify Vulkan binding number shift for b-type register: 'shift' 'space' </summary>                             
     public (int, int)? BRegisterBindingShift = null; 
 
-    /// <summary> Specify Vulkan binding number shift for s-type register: <shift> <space>  </summary>                               
+    /// <summary> Specify Vulkan binding number shift for s-type register: 'shift' 'space' </summary>                               
     public (int, int)? SRegisterBindingShift = null; 
     
-    /// <summary> Specify Vulkan binding number shift for t-type register: <shift> <space>  </summary>                              
+    /// <summary> Specify Vulkan binding number shift for t-type register: 'shift' 'space' </summary>                              
     public (int, int)? TRegisterBindingShift = null; 
 
-    /// <summary> Specify Vulkan binding number shift for u-type register: <shift> <space>  </summary>                              
+    /// <summary> Specify Vulkan binding number shift for u-type register: 'shift' 'space' </summary>                              
     public (int, int)? URegisterBindingShift = null; 
 
     /// <summary> Use DirectX memory layout for Vulkan resources </summary>

@@ -6,7 +6,6 @@ public partial class CompilerOptions
 {
     private enum AssignmentType { Equals, Spaced }
 
-
     [AttributeUsage(AttributeTargets.Struct | AttributeTargets.Enum | AttributeTargets.Class | AttributeTargets.Field, AllowMultiple = true)]
     private class CompilerOptionAttribute : Attribute
     {
@@ -22,7 +21,6 @@ public partial class CompilerOptions
         }
     }
 
-    
     // Cache reflection fields along with CompilerOptionAttribute
     private static readonly Dictionary<string, (FieldInfo, CompilerOptionAttribute[])> fields; 
     
@@ -37,12 +35,6 @@ public partial class CompilerOptions
                 fields[fi.Name] = (fi, attribs);
         }
     }
-
-    public CompilerOptions(ShaderProfile profile)
-    {
-        this.profile = profile;
-    }
-    
 
     private static void SetBoolOption(List<string> args, CompilerOptionAttribute[] options, bool value)
     {
@@ -61,7 +53,6 @@ public partial class CompilerOptions
         else
             args.Add(options[0].Value == 0 ? options[0].Name : options[1].Name);
     }   
-
 
     private static void SetStringOption(List<string> args, CompilerOptionAttribute option, string? str)
     {
@@ -82,7 +73,6 @@ public partial class CompilerOptions
         args.Add(str);
     }
 
-
     private static void SetEnumOption(List<string> args, CompilerOptionAttribute[] options, Enum enumValue)
     {
         // Only one option- pass enum as string value
@@ -102,7 +92,6 @@ public partial class CompilerOptions
         args.Add(matching.Name);
     }
 
-
     private void AddOption(List<string> args, (FieldInfo, CompilerOptionAttribute[]) field)
     {
         object? nullableVal = field.Item1.GetValue(this);
@@ -120,7 +109,9 @@ public partial class CompilerOptions
             SetStringOption(args, field.Item2[0], value.ToString());
     }
 
-
+    /// <summary>
+    /// Get the options set in this <see cref="CompilerOptions"/> instance as a list of command-line arguments used by DXC
+    /// </summary>
     public string[] GetArgumentsArray()
     {
         List<string> args = new List<string>();
