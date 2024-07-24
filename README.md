@@ -126,6 +126,7 @@ This class contains nearly all command-line options specified by DXC.exe. Most o
     - Explicitly enables or disables a warning.
  
 - Fields
+ 
   CompilerOptions has a numerous amount of fields under aliases, and not all of them will be listed here. To see a list of all the fields, please reference the source `CompilerOptions.cs` file.
  
 ### ShaderProfile
