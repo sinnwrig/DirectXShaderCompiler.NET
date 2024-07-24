@@ -2,6 +2,8 @@
 
 A cross-platform managed wrapper written in C# to enable compiling HLSL code using Microsoft's DirectX Shader Compiler. 
 
+[![NuGet](https://img.shields.io/nuget/v/DirectXShaderCompiler.NET.svg)](https://www.nuget.org/packages/DirectXShaderCompiler.NET)
+
 # Usage
 
 This project wraps functionality from DXC into a managed DirectXShaderCompiler class, which can be used to easily compile shader code with various options.
