@@ -15,15 +15,15 @@ public delegate string FileIncludeHandler(string includeName);
 /// </summary>
 public static class ShaderCompiler
 {
-    private static unsafe NativeDxcCompiler* nativeCompiler = DXCNative.DxcInitialize();
+    private static readonly unsafe NativeDxcCompiler* nativeCompiler = DXCNative.DxcInitialize();
 
-    private static unsafe void* includePtr = (void*)Marshal.GetFunctionPointerForDelegate<NativeDxcIncludeFunction>(Include);
-    private static unsafe NativeDxcIncludeResult* Include(IntPtr nativeContext, char* headerUtf16)
+    private static readonly unsafe void* includePtr = (void*)Marshal.GetFunctionPointerForDelegate<NativeDxcIncludeFunction>(Include);
+    private static unsafe NativeDxcIncludeResult* Include(IntPtr nativeContext, byte* headerUtf8)
     {
         if (nativeContext == IntPtr.Zero)
             return null;
 
-        string? headerName = Marshal.PtrToStringUni((IntPtr)headerUtf16);
+        string? headerName = Marshal.PtrToStringUTF8((IntPtr)headerUtf8);
 
         if (headerName != null)
         {
@@ -32,7 +32,7 @@ public static class ShaderCompiler
 
             NativeDxcIncludeResult includeResult = new NativeDxcIncludeResult
             {
-                header_data = NativeStringUtility.GetUTF16Ptr(includeFile, out uint len, false),
+                header_data = NativeStringUtility.GetUTF8Ptr(includeFile, out uint len, false),
                 header_length = len
             };
 
@@ -42,7 +42,7 @@ public static class ShaderCompiler
         return null;
     }
 
-    private static unsafe void* freeIncludePtr = (void*)Marshal.GetFunctionPointerForDelegate<NativeDxcFreeIncludeFunction>(FreeInclude);
+    private static readonly unsafe void* freeIncludePtr = (void*)Marshal.GetFunctionPointerForDelegate<NativeDxcFreeIncludeFunction>(FreeInclude);
     private static unsafe int FreeInclude(IntPtr nativeContext, NativeDxcIncludeResult* includeResult)
     {
         if (includeResult == null)
@@ -79,24 +79,39 @@ public static class ShaderCompiler
     /// <summary>
     /// Compiles a string of shader code.
     /// </summary>
+    /// <param name="code">The code to compile.</param>
+    /// <param name="compilerArgs">The array of string arguments to compile the shader with.</param>
+    /// <param name="includeHandler">The include handler to use for header inclusion.</param>
+    /// <returns>A CompilationResult structure containing the resulting bytecode and possible errors.</returns>
+    public static CompilationResult Compile(string code, string[] compilerArgs, FileIncludeHandler? includeHandler = null)
+    {
+        byte[] codeUtf8 = NativeStringUtility.GetUTF8Bytes(code, true);
+        byte[][] argsUtf8 = new byte[compilerArgs.Length][];
+
+        for (int i = 0; i < compilerArgs.Length; i++)
+            argsUtf8[i] = NativeStringUtility.GetUTF8Bytes(compilerArgs[i], true);
+
+        return Compile(codeUtf8, argsUtf8, includeHandler);
+    }
+
+    /// <summary>
+    /// Compiles a string of shader code.
+    /// </summary>
     /// <param name="code">The code string to compile.</param>
     /// <param name="compilerArgs">The array of string arguments to compile the shader with.</param>
     /// <param name="includeHandler">The include handler to use for header inclusion.</param>
     /// <returns>A CompilationResult structure containing the resulting bytecode and possible errors.</returns>
-    public unsafe static CompilationResult Compile(string code, string[] compilerArgs, FileIncludeHandler? includeHandler = null)
+    public unsafe static CompilationResult Compile(byte[] code, byte[][] compilerArgs, FileIncludeHandler? includeHandler = null)
     {   
         GCHandle codePinned = GCHandle.Alloc(code, GCHandleType.Pinned);
 
-        Span<GCHandle> argsPinned = stackalloc GCHandle[compilerArgs.Length];
-
-        char** argsUtf8 = stackalloc char*[compilerArgs.Length];
+        Span<GCHandle> argsHandles = stackalloc GCHandle[compilerArgs.Length];
+        byte** argsUtf8 = stackalloc byte*[compilerArgs.Length];
 
         for (int i = 0; i < compilerArgs.Length; i++)
         {
-            GCHandle pin = GCHandle.Alloc(compilerArgs[i], GCHandleType.Pinned); // Pin argument
-
-            argsPinned[i] = pin;
-            argsUtf8[i] = (char*)pin.AddrOfPinnedObject();
+            argsHandles[i] = GCHandle.Alloc(compilerArgs[i], GCHandleType.Pinned);
+            argsUtf8[i] = (byte*)argsHandles[i].AddrOfPinnedObject();
         }
 
         NativeDxcIncludeCallbacks* callbacks = stackalloc NativeDxcIncludeCallbacks[1];
@@ -111,18 +126,18 @@ public static class ShaderCompiler
 
         NativeDxcCompileOptions* options = stackalloc NativeDxcCompileOptions[1];
 
-        options->code = (char*)codePinned.AddrOfPinnedObject();
+        options->code = (byte*)codePinned.AddrOfPinnedObject();
         options->code_len = (nuint)code.Length;
         options->args = argsUtf8;
         options->args_len = (nuint)compilerArgs.Length;
         options->include_callbacks = callbacks;
-    
+
         CompilationResult result = GetResult(DXCNative.DxcCompile(nativeCompiler, options));
 
         codePinned.Free();
 
         for (int i = 0; i < compilerArgs.Length; i++)
-            argsPinned[i].Free(); // Free argument
+            argsHandles[i].Free();
 
         return result;
     }
@@ -136,10 +151,10 @@ public static class ShaderCompiler
 
         if (errorPtr != null)
         {
-            char* errorStringPtr = DXCNative.DxcCompileErrorGetString(errorPtr);
+            byte* errorStringPtr = DXCNative.DxcCompileErrorGetString(errorPtr);
             nuint errorStringLen = DXCNative.DxcCompileErrorGetStringLength(errorPtr);
 
-            compilationErrors = Marshal.PtrToStringUni((IntPtr)errorStringPtr, (int)errorStringLen);
+            compilationErrors = Marshal.PtrToStringUTF8((IntPtr)errorStringPtr, (int)errorStringLen);
             DXCNative.DxcCompileErrorRelease(errorPtr);
         }
         else

@@ -24,7 +24,7 @@ internal unsafe struct NativeDxcIncludeResult
     internal nuint header_length;
 }
 
-internal unsafe delegate NativeDxcIncludeResult* NativeDxcIncludeFunction(IntPtr context, char* headerNameUtf8); 
+internal unsafe delegate NativeDxcIncludeResult* NativeDxcIncludeFunction(IntPtr context, byte* headerNameUtf8); 
 internal unsafe delegate int NativeDxcFreeIncludeFunction(IntPtr context, NativeDxcIncludeResult* includeResult);
 
 
@@ -39,9 +39,9 @@ internal unsafe struct NativeDxcIncludeCallbacks {
 [StructLayout(LayoutKind.Sequential)]
 internal unsafe struct NativeDxcCompileOptions {
     // Required
-    internal char* code; // utf-16 string pointer
+    internal byte* code; // utf-8 string pointer
     internal nuint code_len;
-    internal char** args; // Array of utf-16 string pointers
+    internal byte** args; // Array of utf-8 string pointers
     internal nuint args_len;
 
     // Optional
@@ -192,7 +192,7 @@ internal static partial class DXCNative
     [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
     unsafe internal static partial void DxcFinalize(NativeDxcCompiler* compilerPtr);
 
-    [LibraryImport(LibName, StringMarshalling = StringMarshalling.Utf16)]
+    [LibraryImport(LibName)]
     [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
     unsafe internal static partial NativeDxcCompileResult* DxcCompile(NativeDxcCompiler* compilerPtr, NativeDxcCompileOptions* compileOptions);
 
@@ -234,7 +234,7 @@ internal static partial class DXCNative
 
     [LibraryImport(LibName)]
     [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
-    unsafe internal static partial char* DxcCompileErrorGetString(NativeDxcCompileError* errorPtr);
+    unsafe internal static partial byte* DxcCompileErrorGetString(NativeDxcCompileError* errorPtr);
 
     [LibraryImport(LibName)]
     [UnmanagedCallConv(CallConvs = [ typeof(CallConvCdecl) ] )]
