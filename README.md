@@ -152,7 +152,7 @@ Due to the nature of the official DirectXShaderCompiler repository's build syste
 - Runs on all major desktop operating systems.
 - Can be compiled for all major desktop operating systems from any system.
  
-As such, DirectXShaderCompiler.NET uses a fork of [DXC, built with zig](https://github.com/sinnwrig/DirectXShaderCompiler-zig) instead of CMake. As Zig's compiler supports cross-compilation out of the box, it allows DXC to build on any platform, for any platform. The libraries produced by building this repository are what DirectXShaderCompiler.NET uses in its releases.
+As such, DirectXShaderCompiler.NET uses a fork of [DXC, built with zig](https://github.com/sinnwrig/DirectXShaderCompiler-zig) instead of CMake. As Zig's compiler supports cross-compilation out of the box, it allows DXC to build easily from most desktop platforms, for most platforms. The libraries produced by building this repository are what DirectXShaderCompiler.NET uses in its releases.
  
 ## Building Native Libraries
  
