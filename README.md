@@ -113,7 +113,7 @@ The compilation options used by `DirectXShaderCompiler.Compile()`
  
 This class contains nearly all command-line options specified by DXC.exe. Most options are under aliases to match C# naming conventions, and can be set as usual C# fields.
  
-**DISCLAIMER:** CompilerOptions does not sanitize or validate certain combinations of options which can break DXC and cause segmentation faults. It is up to the developer to ensure that the argument combinations they are setting do not cause issues in normal DXC. 
+**DISCLAIMER:** CompilerOptions does not sanitize or validate certain combinations of options which can break DXC. It is up to the developer to ensure that the argument combinations they are setting do not cause issues in normal DXC. 
  
 - Methods
   - `new CompilerOptions(ShaderProfile profile) (Constructor)`
