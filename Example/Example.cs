@@ -4,16 +4,14 @@ using DirectXShaderCompiler.NET;
 
 namespace Application;
 
-public class Program
+public class Example
 {
-    struct FileIncluder
+    class FileIncluder
     {
-        int includeCount;
+        public int includeCount;
 
         public string IncludeFile(string filename)
         {
-            Console.WriteLine($"\tIncluded file count {includeCount}");
-
             // Can be used to track total includes, but falls apart when files have nested includes. 
             // Still useful to avoid recursive includes past certain counts.
             includeCount++;
@@ -32,8 +30,9 @@ public class Program
     }
 
 
-    public static void Main(string[] args)
+    public static void Main()
     {
+        // Certain combinations of options are known to break DXC or be invalid, but most of the important ones work.
         CompilerOptions options = new CompilerOptions(ShaderType.Fragment.ToProfile(6, 0))
         {
             entryPoint = "pixel",
@@ -43,14 +42,11 @@ public class Program
         Console.WriteLine("Compilation options:");
         Console.WriteLine('\t' + string.Join(" ", options.GetArgumentsArray()));
 
-        int cont = 10;
-
-        if (args.Length > 0)
-            _ = int.TryParse(args[0], out cont);
-
         FileIncluder includer = new();
 
         CompilationResult result = ShaderCompiler.Compile(ShaderCode.HlslCode, options, includer.IncludeFile);
+
+        Console.WriteLine($"\tIncluded ({includer.includeCount}) total files");
 
         foreach (var message in result.messages)
             Console.WriteLine($"{message.severity} compiling {message.filename}: (at line {message.line}, column {message.column}): {message.message}");
