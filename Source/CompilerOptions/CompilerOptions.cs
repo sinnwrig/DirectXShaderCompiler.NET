@@ -122,9 +122,9 @@ public partial class CompilerOptions
     [CompilerOption(name: "-E")]
     public string entryPoint = "main";
 
-    /// <summary> Output assembly code listing file </summary>
-    [CompilerOption(name: "-Fc")]
-    public string? assemblyListingFile = null;
+    // /// <summary> Output assembly code listing file </summary>
+    // [CompilerOption(name: "-Fc")]
+    // public string? assemblyListingFile = null;
 
     /// <summary> Select diagnostic message format. Supported values: clang, msvc, mdvc-fallback, vi </summary>
     [CompilerOption(name: "-fdiagnostics-format", assignment: AssignmentType.Equals)]
@@ -138,21 +138,21 @@ public partial class CompilerOptions
     [CompilerOption(name: "-fdisable-loc-tracking")]
     public bool disableLocTracking = false;
 
-    /// <summary> Write debug information to the given file, or automatically named file in directory when ending in '\' </summary>
-    [CompilerOption(name: "-Fd")]
-    public string? debugOutputFile = null;
+    // /// <summary> Write debug information to the given file, or automatically named file in directory when ending in '\' </summary>
+    // [CompilerOption(name: "-Fd")]
+    // public string? debugOutputFile = null;
 
-    /// <summary> Output warnings and errors to the given file </summary>
-    [CompilerOption(name: "-Fe")]
-    public string? errorOutputFile = null;
+    // /// <summary> Output warnings and errors to the given file </summary>
+    // [CompilerOption(name: "-Fe")]
+    // public string? errorOutputFile = null;
 
-    /// <summary> Output header file containing object code </summary>
-    [CompilerOption(name: "-Fh")]
-    public string? headerOutputFile = null;
+    // /// <summary> Output header file containing object code </summary>
+    // [CompilerOption(name: "-Fh")]
+    // public string? headerOutputFile = null;
 
-    /// <summary> Set preprocess output file name (with /P) </summary>
-    [CompilerOption(name: "-Fi")]
-    public string? preprocessOutputFile = null;
+    // /// <summary> Set preprocess output file name (with /P) </summary>
+    // [CompilerOption(name: "-Fi")]
+    // public string? preprocessOutputFile = null;
 
     /// <summary> Expand the operands before performing token-pasting operation (fxc behavior) </summary>
     [CompilerOption(name: "-flegacy-macro-expansion")]
@@ -174,33 +174,33 @@ public partial class CompilerOptions
     [CompilerOption(name: "-force-rootsig-ver")]
     public string? rootsigVersion = null;
 
-    /// <summary> Output object file </summary>
-    [CompilerOption(name: "-Fo")]
-    public string? objectOutputFile = null;
+    // /// <summary> Output object file </summary>
+    // [CompilerOption(name: "-Fo")]
+    // public string? objectOutputFile = null;
 
-    /// <summary> Output reflection to the given file </summary>
-    [CompilerOption(name: "-Fre")]
-    public string? reflectionOutputFile = null;
+    // /// <summary> Output reflection to the given file </summary>
+    // [CompilerOption(name: "-Fre")]
+    // public string? reflectionOutputFile = null;
 
-    /// <summary> Output root signature to the given file </summary>
-    [CompilerOption(name: "-Frs")]
-    public string? rootSignatureOutputFile = null;
+    // /// <summary> Output root signature to the given file </summary>
+    // [CompilerOption(name: "-Frs")]
+    // public string? rootSignatureOutputFile = null;
 
-    /// <summary> Output shader hash to the given file </summary>
-    [CompilerOption(name: "-Fsh")]
-    public string? hashOutputFile = null;
+    // /// <summary> Output shader hash to the given file </summary>
+    // [CompilerOption(name: "-Fsh")]
+    // public string? hashOutputFile = null;
 
-    /// <summary> Print time report </summary>
-    [CompilerOption(name: "-ftime-report")]
-    public bool timeReport = false;
+    // /// <summary> Print time report </summary>
+    // [CompilerOption(name: "-ftime-report")]
+    // public bool timeReport = false;
 
-    /// <summary> Minimum time granularity (in microseconds) traced by time profiler </summary>
-    [CompilerOption(name: "-ftime-trace-granularity", Assignment = AssignmentType.Equals)]
-    public int? timeTraceGranularity = null;
+    // /// <summary> Minimum time granularity (in microseconds) traced by time profiler </summary>
+    // [CompilerOption(name: "-ftime-trace-granularity", Assignment = AssignmentType.Equals)]
+    // public int? timeTraceGranularity = null;
 
-    /// <summary> Print hierarchial time to file- stdout if no file is specified </summary>
-    [CompilerOption(name: "-ftime-trace", Assignment = AssignmentType.Equals)]
-    public string? timeTrace = null;
+    // /// <summary> Print hierarchial time to file- stdout if no file is specified </summary>
+    // [CompilerOption(name: "-ftime-trace", Assignment = AssignmentType.Equals)]
+    // public string? timeTrace = null;
 
     /// <summary> Enable backward compatibility mode </summary>
     [CompilerOption(name: "-Gec")]
@@ -231,25 +231,25 @@ public partial class CompilerOptions
     [CompilerOption(name: "-ignore-line-directives")]
     public bool ignoreLineDirectives = false;
 
-    /// <summary> Output hexadecimal literals </summary>
-    [CompilerOption(name: "-Lx")]
-    public bool outputHexLiterals = false;
+    // /// <summary> Output hexadecimal literals </summary>
+    // [CompilerOption(name: "-Lx")]
+    // public bool outputHexLiterals = false;
 
-    /// <summary> Output instruction numbers in assembly listings </summary>
-    [CompilerOption(name: "-Ni")]
-    public bool outputInstructionNumbers = false;
+    // /// <summary> Output instruction numbers in assembly listings </summary>
+    // [CompilerOption(name: "-Ni")]
+    // public bool outputInstructionNumbers = false;
 
     /// <summary> Suppress warnings </summary>
     [CompilerOption(name: "-no-warnings")]
     public bool suppressWarnings = false;
 
-    /// <summary> Output instruction byte offsets in assembly listings </summary>
-    [CompilerOption(name: "-No")]
-    public bool outputByteOffsets = false;
+    // /// <summary> Output instruction byte offsets in assembly listings </summary>
+    // [CompilerOption(name: "-No")]
+    // public bool outputByteOffsets = false;
 
-    /// <summary> Print the optimizer commands </summary>
-    [CompilerOption(name: "-Odump")]
-    public bool printOptimizerCommands = false;
+    // /// <summary> Print the optimizer commands </summary>
+    // [CompilerOption(name: "-Odump")]
+    // public bool printOptimizerCommands = false;
 
     /// <summary> Disable optimizations </summary>
     [CompilerOption(name: "-Od")]

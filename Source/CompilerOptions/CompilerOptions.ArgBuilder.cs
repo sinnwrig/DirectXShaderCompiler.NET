@@ -22,8 +22,8 @@ public partial class CompilerOptions
     }
 
     // Cache reflection fields along with CompilerOptionAttribute
-    private static readonly Dictionary<string, (FieldInfo, CompilerOptionAttribute[])> fields; 
-    
+    private static readonly Dictionary<string, (FieldInfo, CompilerOptionAttribute[])> fields;
+
     static CompilerOptions()
     {
         fields = [];
@@ -43,7 +43,7 @@ public partial class CompilerOptions
         {
             if (value)
                 args.Add(options[0].Name);
-            
+
             return;
         }
 
@@ -52,7 +52,7 @@ public partial class CompilerOptions
             args.Add(options[0].Value == 1 ? options[0].Name : options[1].Name);
         else
             args.Add(options[0].Value == 0 ? options[0].Name : options[1].Name);
-    }   
+    }
 
     private static void SetStringOption(List<string> args, CompilerOptionAttribute option, string? str)
     {
@@ -60,8 +60,8 @@ public partial class CompilerOptions
         if (string.IsNullOrWhiteSpace(str))
         {
             args.Add(option.Name);
-            return;  
-        } 
+            return;
+        }
 
         if (option.Assignment == AssignmentType.Equals)
         {
@@ -88,7 +88,7 @@ public partial class CompilerOptions
 
         if (matching == null)
             return;
-        
+
         args.Add(matching.Name);
     }
 
@@ -114,6 +114,12 @@ public partial class CompilerOptions
     /// </summary>
     public string[] GetArgumentsArray()
     {
+        if (debugInfo == DebugInfoType.Normal && generateAsSpirV)
+            throw new InvalidOperationException("DebugInfoType.Normal is incompatible with SPIR-V compilation");
+
+        if (debugInfo == DebugInfoType.Slim && embedDebugPDB)
+            throw new InvalidOperationException("embedDebugPDB option requires debugInfo to be Slim");
+
         List<string> args = new List<string>();
 
         foreach (var pair in fields)
