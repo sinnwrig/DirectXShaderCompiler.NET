@@ -5,15 +5,17 @@ using DirectXShaderCompiler.NET;
 namespace Application;
 
 public class Program
-{       
+{
     struct FileIncluder
     {
         int includeCount;
 
         public string IncludeFile(string filename)
         {
-            // Shows persistent property values even when being invoked from an (indirect) unmanaged context
             Console.WriteLine($"\tIncluded file count {includeCount}");
+
+            // Can be used to track total includes, but falls apart when files have nested includes. 
+            // Still useful to avoid recursive includes past certain counts.
             includeCount++;
 
             if (filename == "./FileA.hlsl")
@@ -24,7 +26,7 @@ public class Program
 
             if (filename == "./FileC.hlsl")
                 return "#define INCLUDED_C_FUNC(x) x * 10 - sin(x)";
-        
+
             return "// Nothing to see here";
         }
     }
@@ -46,25 +48,14 @@ public class Program
         if (args.Length > 0)
             _ = int.TryParse(args[0], out cont);
 
-        Console.WriteLine($"\nCompiling {cont} shaders\n");
-        Stopwatch watch = Stopwatch.StartNew();
-        for (int i = 0; i < cont; i++)
-        {
-            FileIncluder finc = new();
+        FileIncluder includer = new();
 
-            Console.WriteLine($"Compiling shader {i}");
-            CompilationResult result = ShaderCompiler.Compile(ShaderCode.HlslCode, options, finc.IncludeFile);
+        CompilationResult result = ShaderCompiler.Compile(ShaderCode.HlslCode, options, includer.IncludeFile);
 
-            if (result.compilationErrors != null)
-            {
-                Console.WriteLine("Errors compiling shader:");
-                Console.WriteLine(result.compilationErrors);
-                return;
-            } 
-        }
+        foreach (var message in result.messages)
+            Console.WriteLine($"{message.severity} compiling {message.filename}: (at line {message.line}, column {message.column}): {message.message}");
 
-        watch.Stop();
-
-        Console.WriteLine($"\nCompiled {cont} shaders in {watch.Elapsed.TotalSeconds} seconds. Average time: {watch.Elapsed.TotalMilliseconds / cont} ms");
+        if (result.objectBytes != null)
+            Console.WriteLine($"Generated {result.objectBytes.Length} bytes of shader code");
     }
 }
