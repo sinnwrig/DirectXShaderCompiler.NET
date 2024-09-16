@@ -8,7 +8,7 @@ public struct CompilationResult
 {
     /// <summary> The compiled binary returned by the operation. </summary>
     /// <remarks> This field will be null if an error was encountered. </remarks>
-    public byte[] objectBytes;
+    public byte[]? objectBytes;
 
     /// <summary>
     /// The messages returned by compilation.

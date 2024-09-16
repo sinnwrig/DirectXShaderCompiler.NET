@@ -168,7 +168,7 @@ public static partial class ShaderCompiler
     {
         NativeDxcCompileError* messagesPtr = DXCNative.DxcCompileResultGetError(resultPtr);
 
-        byte[] objectBytes = [];
+        byte[]? objectBytes = null;
         string? compilationMessage = null;
         CompilationMessage[] messages = [];
 
