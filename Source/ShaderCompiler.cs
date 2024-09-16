@@ -232,16 +232,16 @@ public static partial class ShaderCompiler
 
                 severity = match.Groups["messageType"].Value switch
                 {
-                    "note" => CompilationMessage.MessageSeverity.Info,
-                    "warning" => CompilationMessage.MessageSeverity.Warning,
-                    "error" => CompilationMessage.MessageSeverity.Error,
+                    "note" => MessageSeverity.Info,
+                    "warning" => MessageSeverity.Warning,
+                    "error" => MessageSeverity.Error,
                     _ => throw new Exception("Unknown compilation error"),
                 },
 
                 message = match.Groups["message"].Value,
             };
 
-            if (messages[i].severity == CompilationMessage.MessageSeverity.Error)
+            if (messages[i].severity == MessageSeverity.Error)
                 hasErrors = true;
         }
 
