@@ -171,6 +171,7 @@ public static partial class ShaderCompiler
         byte[]? objectBytes = null;
         string? compilationMessage = null;
         CompilationMessage[] messages = [];
+        bool hasErrors = false;
 
         if (messagesPtr != null)
         {
@@ -180,11 +181,11 @@ public static partial class ShaderCompiler
             compilationMessage = Marshal.PtrToStringUTF8((IntPtr)messageStringPtr, (int)messageStringLen);
             DXCNative.DxcCompileErrorRelease(messagesPtr);
 
-            messages = ParseMessages(compilationMessage);
+            messages = ParseMessages(compilationMessage, out hasErrors);
         }
 
         // No error messages exist, only warnings - there are bytes for us to get at.
-        if (!Array.Exists(messages, x => x.severity == CompilationMessage.MessageSeverity.Error))
+        if (!hasErrors)
         {
             NativeDxcCompileObject* objectPtr = DXCNative.DxcCompileResultGetObject(resultPtr);
 
@@ -211,8 +212,10 @@ public static partial class ShaderCompiler
     [GeneratedRegex(@"^(?<filename>[\w\.]+):(?<line>\d+):(?<column>\d+):\s(?<messageType>\w+):\s(?<message>.*?)(?=\n[\w\.]+:\d+:\d+:|\Z)", RegexOptions.Singleline | RegexOptions.Multiline)]
     private static partial Regex MessageRegex();
 
-    private static CompilationMessage[] ParseMessages(string fullMessage)
+    private static CompilationMessage[] ParseMessages(string fullMessage, out bool hasErrors)
     {
+        hasErrors = false;
+
         MatchCollection matches = MessageRegex().Matches(fullMessage);
 
         CompilationMessage[] messages = new CompilationMessage[matches.Count];
@@ -237,6 +240,9 @@ public static partial class ShaderCompiler
 
                 message = match.Groups["message"].Value,
             };
+
+            if (messages[i].severity == CompilationMessage.MessageSeverity.Error)
+                hasErrors = true;
         }
 
         return messages;
