@@ -10,7 +10,8 @@ public struct CompilationResult
     /// <remarks> This field will be null if an error was encountered. </remarks>
     public byte[] objectBytes;
 
-    /// <summary> Errors returned by compilation. </summary>
-    /// <remarks> If compilation was successful, this field will be null. </remarks>
-    public string? compilationErrors;
+    /// <summary>
+    /// The messages returned by compilation.
+    /// </summary>
+    public CompilationMessage[] messages;
 }
