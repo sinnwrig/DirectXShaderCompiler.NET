@@ -8,6 +8,9 @@ A cross-platform .NET 8.0 wrapper for Microsoft's DirectX Shader Compiler, writt
 
 This project wraps functionality from DXC into a static DirectXShaderCompiler class, which can be used to easily compile shader code with various options, and get parsed and formatted outputs from the compilation process. For an example of how to compile a basic shader, refer to [Example.cs](Example/Example.cs). There is no proper documentation for this wrapper, but most functionality is reasonably well-documented with typical XML comments.
 
+### Note on CompilerOptions
+While CompilerOptions does a generally good job of passing in command-line arguments to DXC in the correct format and providing only working options, specific combinations of options can cause a segmentation fault in native code. It is best to test out combinations of more obscure or under-utilized options in an isolated environment beforehand, as they can potentially cause a program crash.
+
 # Native Details
  
 Due to the nature of the official DirectXShaderCompiler repository's build system, it is difficult to easily acquire or build binaries of DXC that meets the following criteria:
