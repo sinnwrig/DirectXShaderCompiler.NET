@@ -1,5 +1,6 @@
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
+using System.Text;
 
 namespace DirectXShaderCompiler.NET;
 
@@ -13,7 +14,7 @@ public delegate string FileIncludeHandler(string includeName);
 /// <summary>
 /// A static class that allows accessing shader compilation functionality found in the DirectXShaderCompiler. 
 /// </summary>
-public static class ShaderCompiler
+public static partial class ShaderCompiler
 {
     private static readonly unsafe NativeDxcCompiler* nativeCompiler = DXCNative.DxcInitialize();
 
@@ -32,11 +33,14 @@ public static class ShaderCompiler
 
             NativeDxcIncludeResult includeResult = new NativeDxcIncludeResult
             {
-                header_data = NativeStringUtility.GetUTF8Ptr(includeFile, out uint len, false),
-                header_length = len
+                headerData = GetUTF8Ptr(includeFile, out uint len, false),
+                headerLength = len
             };
 
-            return (NativeDxcIncludeResult*)AllocStruct(includeResult);
+            IntPtr nativeIncludeResult = Marshal.AllocHGlobal(sizeof(NativeDxcIncludeResult));
+            Marshal.StructureToPtr(includeResult, nativeIncludeResult, false);
+
+            return (NativeDxcIncludeResult*)nativeIncludeResult;
         }
 
         return null;
@@ -50,17 +54,32 @@ public static class ShaderCompiler
 
         NativeDxcIncludeResult result = Marshal.PtrToStructure<NativeDxcIncludeResult>((IntPtr)includeResult);
 
-        Marshal.FreeHGlobal((IntPtr)result.header_data);
+        Marshal.FreeHGlobal((IntPtr)result.headerData);
         Marshal.FreeHGlobal((IntPtr)includeResult);
 
         return 0;
     }
 
-    private static unsafe IntPtr AllocStruct<T>(T type) where T : struct
+
+    private static byte[] GetUTF8Bytes(string stringValue, bool nullTerminate = true)
     {
-        IntPtr memPtr = Marshal.AllocHGlobal(Marshal.SizeOf<T>());
-        Marshal.StructureToPtr(type, memPtr, false);
-        return memPtr;
+        if (nullTerminate)
+            stringValue = stringValue[^1] == '\0' ? stringValue : stringValue + '\0';
+
+        return Encoding.UTF8.GetBytes(stringValue);
+    }
+
+
+    private static unsafe byte* GetUTF8Ptr(string stringValue, out uint len, bool nullTerminate = true)
+    {
+        byte[] bytes = GetUTF8Bytes(stringValue, nullTerminate);
+
+        len = (uint)bytes.Length;
+
+        IntPtr nativePtr = Marshal.AllocHGlobal((int)len);
+        Marshal.Copy(bytes, 0, nativePtr, (int)len);
+
+        return (byte*)nativePtr;
     }
 
     /// <summary>
@@ -70,7 +89,6 @@ public static class ShaderCompiler
     /// <param name="compilationOptions">The options to compile with.</param>
     /// <param name="includeHandler">The include handler to use for header inclusion.</param>
     /// <returns>A CompilationResult structure containing the resulting bytecode and possible errors.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static CompilationResult Compile(string code, CompilerOptions compilationOptions, FileIncludeHandler? includeHandler = null)
     {
         return Compile(code, compilationOptions.GetArgumentsArray(), includeHandler);
@@ -85,11 +103,11 @@ public static class ShaderCompiler
     /// <returns>A CompilationResult structure containing the resulting bytecode and possible errors.</returns>
     public static CompilationResult Compile(string code, string[] compilerArgs, FileIncludeHandler? includeHandler = null)
     {
-        byte[] codeUtf8 = NativeStringUtility.GetUTF8Bytes(code, true);
+        byte[] codeUtf8 = GetUTF8Bytes(code, true);
         byte[][] argsUtf8 = new byte[compilerArgs.Length][];
 
         for (int i = 0; i < compilerArgs.Length; i++)
-            argsUtf8[i] = NativeStringUtility.GetUTF8Bytes(compilerArgs[i], true);
+            argsUtf8[i] = GetUTF8Bytes(compilerArgs[i], true);
 
         return Compile(codeUtf8, argsUtf8, includeHandler);
     }
@@ -97,12 +115,16 @@ public static class ShaderCompiler
     /// <summary>
     /// Compiles a string of shader code.
     /// </summary>
-    /// <param name="code">The code string to compile.</param>
-    /// <param name="compilerArgs">The array of string arguments to compile the shader with.</param>
+    /// <param name="code">The UTF-8 encoded code to compile.</param>
+    /// <param name="compilerArgs">
+    /// <para>The array of UTF-8 encoded arguments to compile the shader with.</para>
+    /// <para>These arguments must be provided in the format consumed by DXC, the spec of which can be found here: https://github.com/microsoft/DirectXShaderCompiler/wiki/Using-dxc.exe-and-dxcompiler.dll</para>
+    /// </param>
     /// <param name="includeHandler">The include handler to use for header inclusion.</param>
     /// <returns>A CompilationResult structure containing the resulting bytecode and possible errors.</returns>
     public unsafe static CompilationResult Compile(byte[] code, byte[][] compilerArgs, FileIncludeHandler? includeHandler = null)
-    {   
+    {
+        // Ideally the pins would use the fixed() keyword, but nested arrays can only be pinned with GCHandles, so for consistency, we use those.
         GCHandle codePinned = GCHandle.Alloc(code, GCHandleType.Pinned);
 
         Span<GCHandle> argsHandles = stackalloc GCHandle[compilerArgs.Length];
@@ -117,20 +139,20 @@ public static class ShaderCompiler
         NativeDxcIncludeCallbacks* callbacks = stackalloc NativeDxcIncludeCallbacks[1];
 
         if (includeHandler != null)
-            callbacks->include_ctx = (void*)Marshal.GetFunctionPointerForDelegate(includeHandler);
+            callbacks->includeContext = (void*)Marshal.GetFunctionPointerForDelegate(includeHandler);
         else
-            callbacks->include_ctx = null;
+            callbacks->includeContext = null;
 
-        callbacks->include_func = includePtr;
-        callbacks->free_func = freeIncludePtr;
+        callbacks->includeFunction = includePtr;
+        callbacks->freeIncludeFunction = freeIncludePtr;
 
         NativeDxcCompileOptions* options = stackalloc NativeDxcCompileOptions[1];
 
         options->code = (byte*)codePinned.AddrOfPinnedObject();
-        options->code_len = (nuint)code.Length;
-        options->args = argsUtf8;
-        options->args_len = (nuint)compilerArgs.Length;
-        options->include_callbacks = callbacks;
+        options->codeLength = (nuint)code.Length;
+        options->arguments = argsUtf8;
+        options->argumentsLength = (nuint)compilerArgs.Length;
+        options->includeCallbacks = callbacks;
 
         CompilationResult result = GetResult(DXCNative.DxcCompile(nativeCompiler, options));
 
@@ -144,22 +166,28 @@ public static class ShaderCompiler
 
     private static unsafe CompilationResult GetResult(NativeDxcCompileResult* resultPtr)
     {
-        NativeDxcCompileError* errorPtr = DXCNative.DxcCompileResultGetError(resultPtr);
+        NativeDxcCompileError* messagesPtr = DXCNative.DxcCompileResultGetError(resultPtr);
 
         byte[] objectBytes = [];
-        string? compilationErrors = null;
+        string? compilationMessage = null;
+        CompilationMessage[] messages = [];
 
-        if (errorPtr != null)
+        if (messagesPtr != null)
         {
-            byte* errorStringPtr = DXCNative.DxcCompileErrorGetString(errorPtr);
-            nuint errorStringLen = DXCNative.DxcCompileErrorGetStringLength(errorPtr);
+            byte* messageStringPtr = DXCNative.DxcCompileErrorGetString(messagesPtr);
+            nuint messageStringLen = DXCNative.DxcCompileErrorGetStringLength(messagesPtr);
 
-            compilationErrors = Marshal.PtrToStringUTF8((IntPtr)errorStringPtr, (int)errorStringLen);
-            DXCNative.DxcCompileErrorRelease(errorPtr);
+            compilationMessage = Marshal.PtrToStringUTF8((IntPtr)messageStringPtr, (int)messageStringLen);
+            DXCNative.DxcCompileErrorRelease(messagesPtr);
+
+            messages = ParseMessages(compilationMessage);
         }
-        else
+
+        // No error messages exist, only warnings - there are bytes for us to get at.
+        if (!Array.Exists(messages, x => x.severity == CompilationMessage.MessageSeverity.Error))
         {
             NativeDxcCompileObject* objectPtr = DXCNative.DxcCompileResultGetObject(resultPtr);
+
             byte* objectBytesPtr = DXCNative.DxcCompileObjectGetBytes(objectPtr);
             nuint objectBytesLen = DXCNative.DxcCompileObjectGetBytesLength(objectPtr);
 
@@ -174,7 +202,43 @@ public static class ShaderCompiler
         return new CompilationResult()
         {
             objectBytes = objectBytes,
-            compilationErrors = compilationErrors
+            messages = messages
         };
+    }
+
+
+    // Regex might fail with certain message contents. However, it has not as of yet.
+    [GeneratedRegex(@"^(?<filename>[\w\.]+):(?<line>\d+):(?<column>\d+):\s(?<messageType>\w+):\s(?<message>.*?)(?=\n[\w\.]+:\d+:\d+:|\Z)", RegexOptions.Singleline | RegexOptions.Multiline)]
+    private static partial Regex MessageRegex();
+
+    private static CompilationMessage[] ParseMessages(string fullMessage)
+    {
+        MatchCollection matches = MessageRegex().Matches(fullMessage);
+
+        CompilationMessage[] messages = new CompilationMessage[matches.Count];
+
+        for (int i = 0; i < messages.Length; i++)
+        {
+            Match match = matches[i];
+
+            messages[i] = new CompilationMessage()
+            {
+                filename = match.Groups["filename"].Value,
+                line = int.Parse(match.Groups["line"].Value),
+                column = int.Parse(match.Groups["column"].Value),
+
+                severity = match.Groups["messageType"].Value switch
+                {
+                    "note" => CompilationMessage.MessageSeverity.Info,
+                    "warning" => CompilationMessage.MessageSeverity.Warning,
+                    "error" => CompilationMessage.MessageSeverity.Error,
+                    _ => throw new Exception("Unknown compilation error"),
+                },
+
+                message = match.Groups["message"].Value,
+            };
+        }
+
+        return messages;
     }
 }
