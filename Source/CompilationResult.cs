@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace DirectXShaderCompiler.NET;
 
 /// <summary>
@@ -22,24 +24,35 @@ public enum MessageSeverity
 }
 
 /// <summary>
+/// Represents a location inside of a source file provided during compilation.
+/// </summary>
+public struct CompilationFile
+{
+    /// <summary>
+    /// The name of the file. 
+    /// </summary>
+    public string filename;
+
+    /// <summary>
+    /// The line of the file.
+    /// </summary>
+    public int line;
+
+    /// <summary>
+    /// The column or character of the file.
+    /// </summary>
+    public int column;
+}
+
+/// <summary>
 /// Parsed compilation messages
 /// </summary>
 public struct CompilationMessage
 {
     /// <summary>
-    /// The name of the file the message belongs to. 
+    /// The file stack trace of the message.
     /// </summary>
-    public string filename;
-
-    /// <summary>
-    /// The line of the message.
-    /// </summary>
-    public int line;
-
-    /// <summary>
-    /// The column or character of the message.
-    /// </summary>
-    public int column;
+    public IReadOnlyList<CompilationFile> stackTrace;
 
     /// <summary>
     /// The severity of the message.
