@@ -169,26 +169,22 @@ public static partial class ShaderCompiler
         NativeDxcCompileError* messagesPtr = DXCNative.DxcCompileResultGetError(resultPtr);
 
         byte[]? objectBytes = null;
-        string? compilationMessage = null;
         CompilationMessage[] messages = [];
-        bool hasErrors = false;
 
         if (messagesPtr != null)
         {
             byte* messageStringPtr = DXCNative.DxcCompileErrorGetString(messagesPtr);
             nuint messageStringLen = DXCNative.DxcCompileErrorGetStringLength(messagesPtr);
 
-            compilationMessage = Marshal.PtrToStringUTF8((IntPtr)messageStringPtr, (int)messageStringLen);
+            string? compilationMessage = Marshal.PtrToStringUTF8((IntPtr)messageStringPtr, (int)messageStringLen);
             DXCNative.DxcCompileErrorRelease(messagesPtr);
-
-            messages = ParseMessages(compilationMessage, out hasErrors);
+            messages = ParseMessages(compilationMessage);
         }
 
-        // No error messages exist, only warnings - there are bytes for us to get at.
-        if (!hasErrors)
-        {
-            NativeDxcCompileObject* objectPtr = DXCNative.DxcCompileResultGetObject(resultPtr);
+        NativeDxcCompileObject* objectPtr = DXCNative.DxcCompileResultGetObject(resultPtr);
 
+        if (objectPtr != null)
+        {
             byte* objectBytesPtr = DXCNative.DxcCompileObjectGetBytes(objectPtr);
             nuint objectBytesLen = DXCNative.DxcCompileObjectGetBytesLength(objectPtr);
 
@@ -208,43 +204,123 @@ public static partial class ShaderCompiler
     }
 
 
-    // Regex might fail with certain message contents. However, it has not as of yet.
-    [GeneratedRegex(@"^(?<filename>[\w\.]+):(?<line>\d+):(?<column>\d+):\s(?<messageType>\w+):\s(?<message>.*?)(?=\n[\w\.]+:\d+:\d+:|\Z)", RegexOptions.Singleline | RegexOptions.Multiline)]
-    private static partial Regex MessageRegex();
 
-    private static CompilationMessage[] ParseMessages(string fullMessage, out bool hasErrors)
+    private static bool IsStackTrace(string line, out string lineParsed, out CompilationFile file)
     {
-        hasErrors = false;
+        file = default;
+        lineParsed = line;
 
-        MatchCollection matches = MessageRegex().Matches(fullMessage);
-
-        CompilationMessage[] messages = new CompilationMessage[matches.Count];
-
-        for (int i = 0; i < messages.Length; i++)
+        // Found message start
+        if (line.StartsWith("hlsl.hlsl") || line.StartsWith("./"))
         {
-            Match match = matches[i];
+            int lIndex = Math.Max(line.LastIndexOf(": error:"), Math.Max(line.LastIndexOf(": warning:"), line.LastIndexOf(": note:")));
 
-            messages[i] = new CompilationMessage()
-            {
-                filename = match.Groups["filename"].Value,
-                line = int.Parse(match.Groups["line"].Value),
-                column = int.Parse(match.Groups["column"].Value),
+            if (lIndex == -1)
+                return false;
 
-                severity = match.Groups["messageType"].Value switch
-                {
-                    "note" => MessageSeverity.Info,
-                    "warning" => MessageSeverity.Warning,
-                    "error" => MessageSeverity.Error,
-                    _ => throw new Exception("Unknown compilation error"),
-                },
+            lineParsed = line.Substring(lIndex + 2);
 
-                message = match.Groups["message"].Value,
-            };
+            int colIndex = line.LastIndexOf(':', lIndex - 1);
+            int rowIndex = line.LastIndexOf(':', colIndex - 1);
 
-            if (messages[i].severity == MessageSeverity.Error)
-                hasErrors = true;
+            file.filename = line.Substring(0, rowIndex);
+
+            file.line = int.Parse(line.AsSpan(rowIndex + 1, colIndex - (rowIndex + 1)));
+            file.column = int.Parse(line.AsSpan(colIndex + 1, lIndex - (colIndex + 1)));
+
+            return true;
         }
 
-        return messages;
+        const string includedFromText = "In file included from ";
+
+        if (line.StartsWith(includedFromText))
+        {
+            lineParsed = "";
+
+            Console.WriteLine(line);
+
+            file.filename = line.Substring(includedFromText.Length, line.Length - (includedFromText.Length + 3));
+
+            file.line = 1;
+            file.column = 1;
+
+            return true;
+        }
+
+        return false;
+    }
+
+
+    private static bool IsMessageLine(string line, out string lineParsed, out MessageSeverity severity)
+    {
+        severity = MessageSeverity.Info;
+        lineParsed = line;
+
+        if (line.StartsWith("error:"))
+        {
+            severity = MessageSeverity.Error;
+            lineParsed = line.Substring("error: ".Length);
+            return true;
+        }
+
+        if (line.StartsWith("warning:"))
+        {
+            severity = MessageSeverity.Warning;
+            lineParsed = line.Substring("warning: ".Length);
+            return true;
+        }
+
+        if (line.StartsWith("note:"))
+        {
+            lineParsed = line.Substring("note: ".Length);
+            return true;
+        }
+
+        return false;
+    }
+
+
+    private static CompilationMessage[] ParseMessages(string fullMessage)
+    {
+        string[] lines = fullMessage.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+        List<CompilationMessage> messages = [];
+        List<CompilationFile> stackTrace = [];
+
+        foreach (string line in lines)
+        {
+            bool isTrace = false;
+            if (IsStackTrace(line, out string lineParsed, out CompilationFile file))
+            {
+                stackTrace.Add(file);
+                isTrace = true;
+            }
+
+            if (IsMessageLine(lineParsed, out string messageParsed, out MessageSeverity severity))
+            {
+                CompilationMessage message = new CompilationMessage();
+                message.message = messageParsed;
+                message.severity = severity;
+
+                List<CompilationFile> trace = new List<CompilationFile>(stackTrace);
+                trace.Reverse();
+                message.stackTrace = trace;
+
+                stackTrace.Clear();
+
+                messages.Add(message);
+
+                continue;
+            }
+
+            if (!isTrace && messages.Count > 0)
+            {
+                CompilationMessage last = messages[^1];
+                last.message += "\n" + line;
+                messages[^1] = last;
+            }
+        }
+
+        return [];
     }
 }
