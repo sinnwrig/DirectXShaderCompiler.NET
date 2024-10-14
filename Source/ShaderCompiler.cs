@@ -321,6 +321,6 @@ public static partial class ShaderCompiler
             }
         }
 
-        return [];
+        return [.. messages];
     }
 }
