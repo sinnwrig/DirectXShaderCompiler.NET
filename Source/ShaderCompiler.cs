@@ -237,8 +237,6 @@ public static partial class ShaderCompiler
         {
             lineParsed = "";
 
-            Console.WriteLine(line);
-
             file.filename = line.Substring(includedFromText.Length, line.Length - (includedFromText.Length + 3));
 
             file.line = 1;
