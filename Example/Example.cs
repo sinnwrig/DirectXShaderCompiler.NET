@@ -48,7 +48,14 @@ public class Example
         Console.WriteLine($"\tIncluded ({includer.includeCount}) total files");
 
         foreach (var message in result.messages)
-            Console.WriteLine($"{message.severity} compiling {message.filename}: (at line {message.line}, column {message.column}): {message.message}");
+        {
+            Console.WriteLine($"{message.severity}: {message.message}");
+
+            foreach (var file in message.stackTrace)
+            {
+                Console.WriteLine($"\tAt {file.filename}:{file.line}:{file.column}");
+            }
+        }
 
         if (result.objectBytes != null)
             Console.WriteLine($"Generated {result.objectBytes.Length} bytes of shader code");
