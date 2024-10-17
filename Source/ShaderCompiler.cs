@@ -16,7 +16,19 @@ public delegate string FileIncludeHandler(string includeName);
 /// </summary>
 public static partial class ShaderCompiler
 {
-    private static readonly unsafe NativeDxcCompiler* nativeCompiler = DXCNative.DxcInitialize();
+    private static unsafe NativeDxcCompiler* nativeCompiler = null;
+
+    /// <summary>
+    /// Initializes the native compiler library immediately. 
+    /// This method is implicitly called when using any of the compilation methods.
+    /// </summary>
+    public static unsafe void Initialize()
+    {
+        if (nativeCompiler != null)
+            return;
+
+        nativeCompiler = DXCNative.DxcInitialize();
+    }
 
     private static readonly unsafe void* includePtr = (void*)Marshal.GetFunctionPointerForDelegate<NativeDxcIncludeFunction>(Include);
     private static unsafe NativeDxcIncludeResult* Include(IntPtr nativeContext, byte* headerUtf8)
@@ -124,6 +136,8 @@ public static partial class ShaderCompiler
     /// <returns>A CompilationResult structure containing the resulting bytecode and possible errors.</returns>
     public unsafe static CompilationResult Compile(byte[] code, byte[][] compilerArgs, FileIncludeHandler? includeHandler = null)
     {
+        Initialize();
+
         // Ideally the pins would use the fixed() keyword, but nested arrays can only be pinned with GCHandles, so for consistency, we use those.
         GCHandle codePinned = GCHandle.Alloc(code, GCHandleType.Pinned);
 
